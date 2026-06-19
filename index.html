@@ -13,8 +13,7 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 0.25rem; }
 .tab-btn {
   display: flex; align-items: center; gap: 6px;
   padding: 7px 16px; border-radius: 999px;
-  border: 1.5px solid #ccc;
-  background: #fff;
+  border: 1.5px solid #ccc; background: #fff;
   cursor: pointer; font-size: 14px; font-weight: 400;
   color: #1a1a18; transition: all 0.15s;
 }
@@ -29,31 +28,23 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 0.25rem; }
 .sub-label { font-size: 12px; color: #888; margin-right: 2px; }
 .sub-btn {
   padding: 4px 12px; border-radius: 999px; font-size: 12px;
-  border: 1px solid #ccc;
-  background: #fff;
+  border: 1px solid #ccc; background: #fff;
   cursor: pointer; color: #666; transition: all 0.15s;
 }
 .sub-btn:hover { background: #f0efeb; }
 .sub-btn.active { font-weight: 500; color: #fff; }
 .subtitle { font-size: 13px; color: #888; margin: 0 0 0.5rem; }
 .country-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 0.75rem; min-height: 24px; }
-.country-pill {
-  font-size: 12px; padding: 3px 10px; border-radius: 999px;
-  font-weight: 500; color: #fff;
-}
-.map-wrap {
-  width: 100%; border-radius: 12px; overflow: hidden;
-  background: #eeedea; padding: 0.25rem;
-}
+.country-pill { font-size: 12px; padding: 3px 10px; border-radius: 999px; font-weight: 500; color: #fff; }
+.map-wrap { width: 100%; border-radius: 12px; overflow: hidden; background: #eeedea; padding: 0.25rem; }
 svg#world-map { width: 100%; height: auto; display: block; }
 .country { stroke: #fff; stroke-width: 0.3px; transition: opacity 0.2s; cursor: default; }
 .country.active { cursor: pointer; }
 .country.active:hover { opacity: 0.75; }
 .tooltip {
-  position: fixed; background: #fff;
-  border: 0.5px solid #ccc;
-  border-radius: 8px; padding: 6px 12px;
-  font-size: 13px; pointer-events: none; display: none; z-index: 999;
+  position: fixed; background: #fff; border: 0.5px solid #ccc;
+  border-radius: 8px; padding: 6px 12px; font-size: 13px;
+  pointer-events: none; display: none; z-index: 999;
   color: #1a1a18; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 .legend { display: flex; align-items: center; gap: 16px; margin-top: 0.75rem; font-size: 12px; color: #888; flex-wrap: wrap; }
@@ -64,7 +55,6 @@ svg#world-map { width: 100%; height: auto; display: block; }
 <body>
 <h1>SEO GEO Heatmap</h1>
 <p class="desc">Seleziona un materiale per visualizzare i paesi con volontà SEO attiva. Usa i sotto-filtri per lavorazione specifica.</p>
-
 <div class="tabs" id="tabs"></div>
 <div class="sub-filters" id="sub-filters"><span class="sub-label">Lavorazione:</span></div>
 <p class="subtitle" id="subtitle"></p>
@@ -98,6 +88,54 @@ const GROUPS = {
 };
 
 const INACTIVE = '#E0DED8';
+
+// Regions: countries that share a label in the pill display
+// key = ISO3, value = { label (for pill), region (for dedup) }
+const REGION_LABEL = {
+  'SAU': { label:'Middle East', region:'ME' },
+  'ARE': { label:'Middle East', region:'ME' },
+  'ISR': { label:'Middle East', region:'ME' },
+  'OMN': { label:'Middle East', region:'ME' },
+  'KWT': { label:'Middle East', region:'ME' },
+  'MEX': { label:'Latam', region:'LATAM' },
+  'BRA': { label:'Latam', region:'LATAM' },
+  'ARG': { label:'Latam', region:'LATAM' },
+  'CHL': { label:'Latam', region:'LATAM' },
+  'COL': { label:'Latam', region:'LATAM' },
+  'PER': { label:'Latam', region:'LATAM' },
+  'BOL': { label:'Latam', region:'LATAM' },
+  'ECU': { label:'Latam', region:'LATAM' },
+  'GUY': { label:'Latam', region:'LATAM' },
+  'PRY': { label:'Latam', region:'LATAM' },
+  'SUR': { label:'Latam', region:'LATAM' },
+  'URY': { label:'Latam', region:'LATAM' },
+  'VEN': { label:'Latam', region:'LATAM' }
+};
+
+const ME = {
+  'Wood':          { all:true,  subs:{'Cutting':false,'Edging':true,'Drilling':false,'Finishing':false,'Multi-machining':false} },
+  'Glass':         { all:true,  subs:{'Cutting':false,'Edging':true,'Drilling':false,'Multi-machining':false} },
+  'Stone':         { all:true,  subs:{'Cutting':true,'Edging':false,'Finishing':false,'Multi-machining':true} },
+  'Materia':       { all:false, subs:{'Cutting':false,'Finishing':false,'Multi-machining':false} },
+  'Metal':         { all:false, subs:{'Cutting':false} },
+  'Customer Care': { all:true,  subs:{'Services':true,'Maintenance':false,'Components':false,'Training':false} }
+};
+const TR = {
+  'Wood':          { all:true,  subs:{'Cutting':false,'Edging':true,'Drilling':false,'Finishing':false,'Multi-machining':false} },
+  'Glass':         { all:true,  subs:{'Cutting':false,'Edging':true,'Drilling':false,'Multi-machining':false} },
+  'Stone':         { all:true,  subs:{'Cutting':true,'Edging':false,'Finishing':false,'Multi-machining':true} },
+  'Materia':       { all:false, subs:{'Cutting':false,'Finishing':false,'Multi-machining':false} },
+  'Metal':         { all:false, subs:{'Cutting':false} },
+  'Customer Care': { all:true,  subs:{'Services':false,'Maintenance':false,'Components':true,'Training':false} }
+};
+const LATAM = {
+  'Wood':          { all:true,  subs:{'Cutting':false,'Edging':false,'Drilling':false,'Finishing':false,'Multi-machining':true} },
+  'Glass':         { all:true,  subs:{'Cutting':false,'Edging':false,'Drilling':false,'Multi-machining':true} },
+  'Stone':         { all:false, subs:{'Cutting':false,'Edging':false,'Finishing':false,'Multi-machining':false} },
+  'Materia':       { all:true,  subs:{'Cutting':false,'Finishing':false,'Multi-machining':true} },
+  'Metal':         { all:false, subs:{'Cutting':false} },
+  'Customer Care': { all:true,  subs:{'Services':false,'Maintenance':false,'Components':true,'Training':false} }
+};
 
 const COUNTRIES = {
   'USA': { iso:'USA', name:'United States', active:{
@@ -139,7 +177,26 @@ const COUNTRIES = {
     'Materia':       { all:true,  subs:{'Cutting':false,'Finishing':false,'Multi-machining':true} },
     'Metal':         { all:false, subs:{'Cutting':false} },
     'Customer Care': { all:true,  subs:{'Services':false,'Maintenance':false,'Components':true,'Training':false} }
-  }}
+  }},
+  'TUR': { iso:'TUR', name:'Turkey',       active: TR },
+  'SAU': { iso:'SAU', name:'Saudi Arabia', active: ME },
+  'ARE': { iso:'ARE', name:'UAE',          active: ME },
+  'ISR': { iso:'ISR', name:'Israel',       active: ME },
+  'OMN': { iso:'OMN', name:'Oman',         active: ME },
+  'KWT': { iso:'KWT', name:'Kuwait',       active: ME },
+  'MEX': { iso:'MEX', name:'Mexico',       active: LATAM },
+  'BRA': { iso:'BRA', name:'Brazil',       active: LATAM },
+  'ARG': { iso:'ARG', name:'Argentina',    active: LATAM },
+  'CHL': { iso:'CHL', name:'Chile',        active: LATAM },
+  'COL': { iso:'COL', name:'Colombia',     active: LATAM },
+  'PER': { iso:'PER', name:'Peru',         active: LATAM },
+  'BOL': { iso:'BOL', name:'Bolivia',      active: LATAM },
+  'ECU': { iso:'ECU', name:'Ecuador',      active: LATAM },
+  'GUY': { iso:'GUY', name:'Guyana',       active: LATAM },
+  'PRY': { iso:'PRY', name:'Paraguay',     active: LATAM },
+  'SUR': { iso:'SUR', name:'Suriname',     active: LATAM },
+  'URY': { iso:'URY', name:'Uruguay',      active: LATAM },
+  'VEN': { iso:'VEN', name:'Venezuela',    active: LATAM }
 };
 
 let currentGroup = 'Wood';
@@ -170,22 +227,41 @@ function getActiveCountries() {
 
 function updateSubtitle() {
   const active = getActiveCountries();
-  const n = active.length;
-  const label = currentSub ? currentGroup + ' › ' + currentSub : currentGroup;
-  subtitleEl.textContent = label + ' — ' + n + (n === 1 ? ' paese attivo' : ' paesi attivi');
+  const col = GROUPS[currentGroup].dotPattern ? '#888780' : GROUPS[currentGroup].color;
   pillsEl.innerHTML = '';
+
+  // Build deduplicated pill list: regions get one pill, individual countries get their own
+  const seenRegions = new Set();
+  const pills = []; // { label, isRegion }
+
+  active.forEach(function(c) {
+    const rl = REGION_LABEL[c.iso];
+    if (rl) {
+      if (!seenRegions.has(rl.region)) {
+        seenRegions.add(rl.region);
+        pills.push(rl.label);
+      }
+    } else {
+      pills.push(c.name);
+    }
+  });
+
+  // Count: regions count as 1, individual countries count as 1 each
+  const n = pills.length;
+  const label = currentSub ? currentGroup + ' › ' + currentSub : currentGroup;
+  subtitleEl.textContent = label + ' — ' + n + (n === 1 ? ' area attiva' : ' aree attive');
+
   if (n === 0) {
     const empty = document.createElement('span');
     empty.style.cssText = 'font-size:12px;color:#888;font-style:italic;';
-    empty.textContent = 'Nessun paese selezionato';
+    empty.textContent = 'Nessuna area selezionata';
     pillsEl.appendChild(empty);
   } else {
-    const col = GROUPS[currentGroup].dotPattern ? '#888780' : GROUPS[currentGroup].color;
-    active.forEach(c => {
+    pills.forEach(function(label) {
       const pill = document.createElement('span');
       pill.className = 'country-pill';
       pill.style.background = col;
-      pill.textContent = c.name;
+      pill.textContent = label;
       pillsEl.appendChild(pill);
     });
   }
@@ -264,15 +340,20 @@ Object.keys(GROUPS).forEach(function(g) {
 });
 
 const ISO_MAP = {
-  '840':'USA','124':'CAN','484':'MEX','32':'ARG','76':'BRA','152':'CHL','170':'COL','604':'PER',
-  '276':'DEU','380':'ITA','250':'FRA','724':'ESP','826':'GBR','442':'LUX','528':'NLD',
-  '56':'BEL','40':'AUT','756':'CHE','616':'POL','203':'CZE','348':'HUN','642':'ROU',
-  '100':'BGR','191':'HRV','705':'SVN','703':'SVK','372':'IRL','208':'DNK','752':'SWE',
-  '246':'FIN','578':'NOR','620':'PRT','300':'GRC','792':'TUR','804':'UKR','643':'RUS',
-  '356':'IND','156':'CHN','392':'JPN','410':'KOR','36':'AUS','554':'NZL','710':'ZAF',
-  '818':'EGY','12':'DZA','504':'MAR','566':'NGA','404':'KEN','682':'SAU','784':'ARE',
-  '376':'ISR','586':'PAK','50':'BGD','360':'IDN','764':'THA','704':'VNM','458':'MYS',
-  '608':'PHL','702':'SGP'
+  '840':'USA', '124':'CAN', '484':'MEX', '032':'ARG', '076':'BRA',
+  '152':'CHL', '170':'COL', '604':'PER', '068':'BOL', '218':'ECU',
+  '328':'GUY', '600':'PRY', '740':'SUR', '858':'URY', '862':'VEN',
+  '276':'DEU', '380':'ITA', '250':'FRA', '724':'ESP', '826':'GBR',
+  '442':'LUX', '528':'NLD', '056':'BEL', '040':'AUT', '756':'CHE',
+  '616':'POL', '203':'CZE', '348':'HUN', '642':'ROU', '100':'BGR',
+  '191':'HRV', '705':'SVN', '703':'SVK', '372':'IRL', '208':'DNK',
+  '752':'SWE', '246':'FIN', '578':'NOR', '620':'PRT', '300':'GRC',
+  '792':'TUR', '804':'UKR', '643':'RUS', '356':'IND', '156':'CHN',
+  '392':'JPN', '410':'KOR', '036':'AUS', '554':'NZL', '710':'ZAF',
+  '818':'EGY', '012':'DZA', '504':'MAR', '566':'NGA', '404':'KEN',
+  '682':'SAU', '784':'ARE', '376':'ISR', '586':'PAK', '050':'BGD',
+  '360':'IDN', '764':'THA', '704':'VNM', '458':'MYS', '608':'PHL',
+  '702':'SGP', '512':'OMN', '414':'KWT'
 };
 
 const svg  = d3.select('#world-map');
@@ -288,7 +369,11 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
       .enter().append('path')
       .attr('class','country')
       .attr('d', path)
-      .each(function(d) { this.dataset.iso3 = ISO_MAP[String(d.id)] || ''; })
+      .each(function(d) {
+        var numId = parseInt(d.id, 10);
+        var paddedId = numId ? String(numId).padStart(3, '0') : '';
+        this.dataset.iso3 = ISO_MAP[paddedId] || '';
+      })
       .on('mousemove', function(event) {
         const iso3 = this.dataset.iso3;
         if (!isCountryActive(iso3)) return;
@@ -297,7 +382,10 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
         tooltipEl.style.left = (event.clientX + 12) + 'px';
         tooltipEl.style.top  = (event.clientY - 28) + 'px';
         const label = currentSub ? currentGroup + ' › ' + currentSub : currentGroup;
-        tooltipEl.textContent = c.name + ' — ' + label;
+        // Tooltip shows region label for grouped countries
+        const rl = REGION_LABEL[iso3];
+        const displayName = rl ? rl.label : c.name;
+        tooltipEl.textContent = displayName + ' — ' + label;
       })
       .on('mouseleave', function() { tooltipEl.style.display = 'none'; });
     setGroup('Wood');
