@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEO GEO Heatmap</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a18; padding: 2rem; }
+h1 { font-size: 20px; font-weight: 500; margin-bottom: 0.25rem; }
+.desc { font-size: 13px; color: #888; margin-bottom: 1rem; }
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; padding: 0.5rem 0; }
+.tab-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 16px; border-radius: 999px;
+  border: 1.5px solid #ccc;
+  background: #fff;
+  cursor: pointer; font-size: 14px; font-weight: 400;
+  color: #1a1a18; transition: all 0.15s;
+}
+.tab-btn .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.tab-btn.active { font-weight: 500; border-width: 2px; }
+.tab-btn:hover { background: #f0efeb; }
+.sub-filters {
+  display: none; gap: 6px; flex-wrap: wrap;
+  padding: 0.5rem 0 0.75rem; align-items: center; min-height: 36px;
+}
+.sub-filters.visible { display: flex; }
+.sub-label { font-size: 12px; color: #888; margin-right: 2px; }
+.sub-btn {
+  padding: 4px 12px; border-radius: 999px; font-size: 12px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer; color: #666; transition: all 0.15s;
+}
+.sub-btn:hover { background: #f0efeb; }
+.sub-btn.active { font-weight: 500; color: #fff; }
+.subtitle { font-size: 13px; color: #888; margin: 0 0 0.5rem; }
+.country-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 0.75rem; min-height: 24px; }
+.country-pill {
+  font-size: 12px; padding: 3px 10px; border-radius: 999px;
+  font-weight: 500; color: #fff;
+}
+.map-wrap {
+  width: 100%; border-radius: 12px; overflow: hidden;
+  background: #eeedea; padding: 0.25rem;
+}
+svg#world-map { width: 100%; height: auto; display: block; }
+.country { stroke: #fff; stroke-width: 0.3px; transition: opacity 0.2s; cursor: default; }
+.country.active { cursor: pointer; }
+.country.active:hover { opacity: 0.75; }
+.tooltip {
+  position: fixed; background: #fff;
+  border: 0.5px solid #ccc;
+  border-radius: 8px; padding: 6px 12px;
+  font-size: 13px; pointer-events: none; display: none; z-index: 999;
+  color: #1a1a18; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.legend { display: flex; align-items: center; gap: 16px; margin-top: 0.75rem; font-size: 12px; color: #888; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+</style>
+</head>
+<body>
+<h1>SEO GEO Heatmap</h1>
+<p class="desc">Seleziona un materiale per visualizzare i paesi con volontà SEO attiva. Usa i sotto-filtri per lavorazione specifica.</p>
+
+<div class="tabs" id="tabs"></div>
+<div class="sub-filters" id="sub-filters"><span class="sub-label">Lavorazione:</span></div>
+<p class="subtitle" id="subtitle"></p>
+<div class="country-pills" id="country-pills"></div>
+<div class="map-wrap">
+  <svg id="world-map" viewBox="100 80 800 380" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <pattern id="cc-pattern" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+        <rect width="6" height="6" fill="#D3D1C7"/>
+        <line x1="0" y1="3" x2="6" y2="3" stroke="#888780" stroke-width="1"/>
+      </pattern>
+    </defs>
+  </svg>
+</div>
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" id="legend-active-dot"></div><span id="legend-active-label">Attivo</span></div>
+  <div class="legend-item"><div class="legend-dot" style="background:#E0DED8"></div><span>Non selezionato</span></div>
+</div>
+<div class="tooltip" id="tooltip"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script>
+const GROUPS = {
+  'Wood':          { color:'#EF9F27', dotBg:'#EF9F27', dotPattern:false, subs:['Cutting','Edging','Drilling','Finishing','Multi-machining'] },
+  'Glass':         { color:'#378ADD', dotBg:'#378ADD', dotPattern:false, subs:['Cutting','Edging','Drilling','Multi-machining'] },
+  'Stone':         { color:'#E24B4A', dotBg:'#E24B4A', dotPattern:false, subs:['Cutting','Edging','Finishing','Multi-machining'] },
+  'Materia':       { color:'#7F77DD', dotBg:'#7F77DD', dotPattern:false, subs:['Cutting','Finishing','Multi-machining'] },
+  'Metal':         { color:'#5F5E5A', dotBg:'#5F5E5A', dotPattern:false, subs:['Cutting'] },
+  'Customer Care': { color:'url(#cc-pattern)', solidColor:'#888780', dotBg:null, dotPattern:true, subs:['Services','Maintenance','Components','Training'] }
+};
+
+const INACTIVE = '#E0DED8';
+
+const COUNTRIES = {
+  'USA': { iso:'USA', name:'United States', active:{
+    'Wood':          { all:true,  subs:{'Cutting':false,'Edging':false,'Drilling':false,'Finishing':false,'Multi-machining':true} },
+    'Glass':         { all:false, subs:{'Cutting':false,'Edging':false,'Drilling':false,'Multi-machining':false} },
+    'Stone':         { all:true,  subs:{'Cutting':true,'Edging':true,'Finishing':false,'Multi-machining':false} },
+    'Materia':       { all:false, subs:{'Cutting':false,'Finishing':false,'Multi-machining':false} },
+    'Metal':         { all:true,  subs:{'Cutting':true} },
+    'Customer Care': { all:true,  subs:{'Services':true,'Maintenance':false,'Components':false,'Training':false} }
+  }},
+  'CAN': { iso:'CAN', name:'Canada', active:{
+    'Wood':          { all:true,  subs:{'Cutting':false,'Edging':false,'Drilling':false,'Finishing':false,'Multi-machining':true} },
+    'Glass':         { all:false, subs:{'Cutting':false,'Edging':false,'Drilling':false,'Multi-machining':false} },
+    'Stone':         { all:true,  subs:{'Cutting':true,'Edging':true,'Finishing':false,'Multi-machining':false} },
+    'Materia':       { all:false, subs:{'Cutting':false,'Finishing':false,'Multi-machining':false} },
+    'Metal':         { all:true,  subs:{'Cutting':true} },
+    'Customer Care': { all:true,  subs:{'Services':true,'Maintenance':false,'Components':false,'Training':false} }
+  }},
+  'IND': { iso:'IND', name:'India', active:{
+    'Wood':          { all:true,  subs:{'Cutting':true,'Edging':true,'Drilling':false,'Finishing':false,'Multi-machining':true} },
+    'Glass':         { all:true,  subs:{'Cutting':true,'Edging':false,'Drilling':false,'Multi-machining':false} },
+    'Stone':         { all:true,  subs:{'Cutting':false,'Edging':false,'Finishing':false,'Multi-machining':true} },
+    'Materia':       { all:true,  subs:{'Cutting':false,'Finishing':false,'Multi-machining':true} },
+    'Metal':         { all:false, subs:{'Cutting':false} },
+    'Customer Care': { all:false, subs:{'Services':false,'Maintenance':false,'Components':false,'Training':false} }
+  }},
+  'GBR': { iso:'GBR', name:'United Kingdom', active:{
+    'Wood':          { all:true,  subs:{'Cutting':false,'Edging':true,'Drilling':false,'Finishing':false,'Multi-machining':true} },
+    'Glass':         { all:true,  subs:{'Cutting':false,'Edging':false,'Drilling':false,'Multi-machining':true} },
+    'Stone':         { all:true,  subs:{'Cutting':true,'Edging':false,'Finishing':false,'Multi-machining':false} },
+    'Materia':       { all:true,  subs:{'Cutting':false,'Finishing':false,'Multi-machining':true} },
+    'Metal':         { all:false, subs:{'Cutting':false} },
+    'Customer Care': { all:false, subs:{'Services':false,'Maintenance':false,'Components':false,'Training':false} }
+  }},
+  'FRA': { iso:'FRA', name:'France', active:{
+    'Wood':          { all:true,  subs:{'Cutting':false,'Edging':true,'Drilling':false,'Finishing':false,'Multi-machining':false} },
+    'Glass':         { all:true,  subs:{'Cutting':false,'Edging':false,'Drilling':false,'Multi-machining':true} },
+    'Stone':         { all:true,  subs:{'Cutting':true,'Edging':false,'Finishing':false,'Multi-machining':false} },
+    'Materia':       { all:true,  subs:{'Cutting':false,'Finishing':false,'Multi-machining':true} },
+    'Metal':         { all:false, subs:{'Cutting':false} },
+    'Customer Care': { all:true,  subs:{'Services':false,'Maintenance':false,'Components':true,'Training':false} }
+  }}
+};
+
+let currentGroup = 'Wood';
+let currentSub   = null;
+
+const tabsEl     = document.getElementById('tabs');
+const subFilters = document.getElementById('sub-filters');
+const subtitleEl = document.getElementById('subtitle');
+const pillsEl    = document.getElementById('country-pills');
+const tooltipEl  = document.getElementById('tooltip');
+const legendDot  = document.getElementById('legend-active-dot');
+const legendLbl  = document.getElementById('legend-active-label');
+
+function solidColor(g) { return GROUPS[g].solidColor || GROUPS[g].color; }
+
+function isCountryActive(iso3) {
+  const c = COUNTRIES[iso3];
+  if (!c) return false;
+  const gdata = c.active[currentGroup];
+  if (!gdata) return false;
+  if (currentSub) return gdata.subs[currentSub] === true;
+  return gdata.all;
+}
+
+function getActiveCountries() {
+  return Object.values(COUNTRIES).filter(c => isCountryActive(c.iso));
+}
+
+function updateSubtitle() {
+  const active = getActiveCountries();
+  const n = active.length;
+  const label = currentSub ? currentGroup + ' › ' + currentSub : currentGroup;
+  subtitleEl.textContent = label + ' — ' + n + (n === 1 ? ' paese attivo' : ' paesi attivi');
+  pillsEl.innerHTML = '';
+  if (n === 0) {
+    const empty = document.createElement('span');
+    empty.style.cssText = 'font-size:12px;color:#888;font-style:italic;';
+    empty.textContent = 'Nessun paese selezionato';
+    pillsEl.appendChild(empty);
+  } else {
+    const col = GROUPS[currentGroup].dotPattern ? '#888780' : GROUPS[currentGroup].color;
+    active.forEach(c => {
+      const pill = document.createElement('span');
+      pill.className = 'country-pill';
+      pill.style.background = col;
+      pill.textContent = c.name;
+      pillsEl.appendChild(pill);
+    });
+  }
+}
+
+function updateLegend() {
+  if (GROUPS[currentGroup].dotPattern) {
+    legendDot.style.cssText = 'width:10px;height:10px;border-radius:50%;background:repeating-linear-gradient(45deg,#bbb 0px,#bbb 1px,#e8e6e0 1px,#e8e6e0 3px);border:0.5px solid #999;';
+  } else {
+    legendDot.style.cssText = 'width:10px;height:10px;border-radius:50%;background:' + GROUPS[currentGroup].dotBg + ';';
+  }
+  legendLbl.textContent = (currentSub || currentGroup) + ' attivo';
+}
+
+function updateMap() {
+  d3.selectAll('.country')
+    .attr('fill', function() { return isCountryActive(this.dataset.iso3) ? GROUPS[currentGroup].color : INACTIVE; })
+    .classed('active', function() { return isCountryActive(this.dataset.iso3); });
+}
+
+function updateSubBtns() {
+  subFilters.querySelectorAll('.sub-btn').forEach(function(b) {
+    const on = b.dataset.sub === currentSub;
+    b.classList.toggle('active', on);
+    if (on) {
+      b.style.background  = solidColor(currentGroup);
+      b.style.borderColor = solidColor(currentGroup);
+      b.style.color       = '#fff';
+    } else {
+      b.style.background  = '';
+      b.style.borderColor = '';
+      b.style.color       = '';
+    }
+  });
+}
+
+function buildSubFilters(g) {
+  subFilters.querySelectorAll('.sub-btn').forEach(function(b) { b.remove(); });
+  const subs = GROUPS[g].subs;
+  if (!subs || subs.length === 0) { subFilters.classList.remove('visible'); return; }
+  subFilters.classList.add('visible');
+  subs.forEach(function(s) {
+    const btn = document.createElement('button');
+    btn.className = 'sub-btn'; btn.textContent = s; btn.dataset.sub = s;
+    btn.addEventListener('click', function() {
+      currentSub = currentSub === s ? null : s;
+      updateSubBtns(); updateSubtitle(); updateLegend(); updateMap();
+    });
+    subFilters.appendChild(btn);
+  });
+  updateSubBtns();
+}
+
+function setGroup(g) {
+  currentGroup = g; currentSub = null;
+  tabsEl.querySelectorAll('.tab-btn').forEach(function(b) {
+    const on = b.dataset.group === g;
+    b.classList.toggle('active', on);
+    b.style.borderColor = on ? solidColor(g) : '';
+    b.style.color       = on ? solidColor(g) : '';
+  });
+  buildSubFilters(g); updateSubtitle(); updateLegend(); updateMap();
+}
+
+Object.keys(GROUPS).forEach(function(g) {
+  const btn = document.createElement('button');
+  btn.className = 'tab-btn'; btn.dataset.group = g;
+  const dot = document.createElement('span'); dot.className = 'dot';
+  if (GROUPS[g].dotPattern) {
+    dot.style.cssText = 'background:repeating-linear-gradient(45deg,#bbb 0px,#bbb 1px,#e8e6e0 1px,#e8e6e0 3px);border:0.5px solid #999;';
+  } else { dot.style.background = GROUPS[g].dotBg; }
+  btn.appendChild(dot);
+  btn.appendChild(document.createTextNode(g));
+  btn.addEventListener('click', function() { setGroup(g); });
+  tabsEl.appendChild(btn);
+});
+
+const ISO_MAP = {
+  '840':'USA','124':'CAN','484':'MEX','32':'ARG','76':'BRA','152':'CHL','170':'COL','604':'PER',
+  '276':'DEU','380':'ITA','250':'FRA','724':'ESP','826':'GBR','442':'LUX','528':'NLD',
+  '56':'BEL','40':'AUT','756':'CHE','616':'POL','203':'CZE','348':'HUN','642':'ROU',
+  '100':'BGR','191':'HRV','705':'SVN','703':'SVK','372':'IRL','208':'DNK','752':'SWE',
+  '246':'FIN','578':'NOR','620':'PRT','300':'GRC','792':'TUR','804':'UKR','643':'RUS',
+  '356':'IND','156':'CHN','392':'JPN','410':'KOR','36':'AUS','554':'NZL','710':'ZAF',
+  '818':'EGY','12':'DZA','504':'MAR','566':'NGA','404':'KEN','682':'SAU','784':'ARE',
+  '376':'ISR','586':'PAK','50':'BGD','360':'IDN','764':'THA','704':'VNM','458':'MYS',
+  '608':'PHL','702':'SGP'
+};
+
+const svg  = d3.select('#world-map');
+const proj = d3.geoNaturalEarth1().scale(170).translate([500, 280]);
+const path = d3.geoPath().projection(proj);
+
+fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+  .then(function(r) { return r.json(); })
+  .then(function(world) {
+    const countries = topojson.feature(world, world.objects.countries);
+    svg.selectAll('.country')
+      .data(countries.features)
+      .enter().append('path')
+      .attr('class','country')
+      .attr('d', path)
+      .each(function(d) { this.dataset.iso3 = ISO_MAP[String(d.id)] || ''; })
+      .on('mousemove', function(event) {
+        const iso3 = this.dataset.iso3;
+        if (!isCountryActive(iso3)) return;
+        const c = COUNTRIES[iso3];
+        tooltipEl.style.display = 'block';
+        tooltipEl.style.left = (event.clientX + 12) + 'px';
+        tooltipEl.style.top  = (event.clientY - 28) + 'px';
+        const label = currentSub ? currentGroup + ' › ' + currentSub : currentGroup;
+        tooltipEl.textContent = c.name + ' — ' + label;
+      })
+      .on('mouseleave', function() { tooltipEl.style.display = 'none'; });
+    setGroup('Wood');
+  });
+</script>
+</body>
+</html>
