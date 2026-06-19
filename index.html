@@ -89,14 +89,21 @@ const GROUPS = {
 
 const INACTIVE = '#E0DED8';
 
-// Regions: countries that share a label in the pill display
-// key = ISO3, value = { label (for pill), region (for dedup) }
 const REGION_LABEL = {
   'SAU': { label:'Middle East', region:'ME' },
   'ARE': { label:'Middle East', region:'ME' },
-  'ISR': { label:'Middle East', region:'ME' },
-  'OMN': { label:'Middle East', region:'ME' },
+  'QAT': { label:'Middle East', region:'ME' },
   'KWT': { label:'Middle East', region:'ME' },
+  'OMN': { label:'Middle East', region:'ME' },
+  'BHR': { label:'Middle East', region:'ME' },
+  'YEM': { label:'Middle East', region:'ME' },
+  'ISR': { label:'Middle East', region:'ME' },
+  'JOR': { label:'Middle East', region:'ME' },
+  'LBN': { label:'Middle East', region:'ME' },
+  'SYR': { label:'Middle East', region:'ME' },
+  'PSE': { label:'Middle East', region:'ME' },
+  'IRQ': { label:'Middle East', region:'ME' },
+  'IRN': { label:'Middle East', region:'ME' },
   'MEX': { label:'Latam', region:'LATAM' },
   'BRA': { label:'Latam', region:'LATAM' },
   'ARG': { label:'Latam', region:'LATAM' },
@@ -178,12 +185,21 @@ const COUNTRIES = {
     'Metal':         { all:false, subs:{'Cutting':false} },
     'Customer Care': { all:true,  subs:{'Services':false,'Maintenance':false,'Components':true,'Training':false} }
   }},
-  'TUR': { iso:'TUR', name:'Turkey',       active: TR },
-  'SAU': { iso:'SAU', name:'Saudi Arabia', active: ME },
-  'ARE': { iso:'ARE', name:'UAE',          active: ME },
-  'ISR': { iso:'ISR', name:'Israel',       active: ME },
-  'OMN': { iso:'OMN', name:'Oman',         active: ME },
-  'KWT': { iso:'KWT', name:'Kuwait',       active: ME },
+  'TUR': { iso:'TUR', name:'Turkey',       active: TR  },
+  'SAU': { iso:'SAU', name:'Saudi Arabia', active: ME  },
+  'ARE': { iso:'ARE', name:'UAE',          active: ME  },
+  'QAT': { iso:'QAT', name:'Qatar',        active: ME  },
+  'KWT': { iso:'KWT', name:'Kuwait',       active: ME  },
+  'OMN': { iso:'OMN', name:'Oman',         active: ME  },
+  'BHR': { iso:'BHR', name:'Bahrain',      active: ME  },
+  'YEM': { iso:'YEM', name:'Yemen',        active: ME  },
+  'ISR': { iso:'ISR', name:'Israel',       active: ME  },
+  'JOR': { iso:'JOR', name:'Jordan',       active: ME  },
+  'LBN': { iso:'LBN', name:'Lebanon',      active: ME  },
+  'SYR': { iso:'SYR', name:'Syria',        active: ME  },
+  'PSE': { iso:'PSE', name:'Palestine',    active: ME  },
+  'IRQ': { iso:'IRQ', name:'Iraq',         active: ME  },
+  'IRN': { iso:'IRN', name:'Iran',         active: ME  },
   'MEX': { iso:'MEX', name:'Mexico',       active: LATAM },
   'BRA': { iso:'BRA', name:'Brazil',       active: LATAM },
   'ARG': { iso:'ARG', name:'Argentina',    active: LATAM },
@@ -229,11 +245,8 @@ function updateSubtitle() {
   const active = getActiveCountries();
   const col = GROUPS[currentGroup].dotPattern ? '#888780' : GROUPS[currentGroup].color;
   pillsEl.innerHTML = '';
-
-  // Build deduplicated pill list: regions get one pill, individual countries get their own
   const seenRegions = new Set();
-  const pills = []; // { label, isRegion }
-
+  const pills = [];
   active.forEach(function(c) {
     const rl = REGION_LABEL[c.iso];
     if (rl) {
@@ -245,23 +258,20 @@ function updateSubtitle() {
       pills.push(c.name);
     }
   });
-
-  // Count: regions count as 1, individual countries count as 1 each
   const n = pills.length;
   const label = currentSub ? currentGroup + ' › ' + currentSub : currentGroup;
   subtitleEl.textContent = label + ' — ' + n + (n === 1 ? ' area attiva' : ' aree attive');
-
   if (n === 0) {
     const empty = document.createElement('span');
     empty.style.cssText = 'font-size:12px;color:#888;font-style:italic;';
     empty.textContent = 'Nessuna area selezionata';
     pillsEl.appendChild(empty);
   } else {
-    pills.forEach(function(label) {
+    pills.forEach(function(p) {
       const pill = document.createElement('span');
       pill.className = 'country-pill';
       pill.style.background = col;
-      pill.textContent = label;
+      pill.textContent = p;
       pillsEl.appendChild(pill);
     });
   }
@@ -351,9 +361,11 @@ const ISO_MAP = {
   '792':'TUR', '804':'UKR', '643':'RUS', '356':'IND', '156':'CHN',
   '392':'JPN', '410':'KOR', '036':'AUS', '554':'NZL', '710':'ZAF',
   '818':'EGY', '012':'DZA', '504':'MAR', '566':'NGA', '404':'KEN',
-  '682':'SAU', '784':'ARE', '376':'ISR', '586':'PAK', '050':'BGD',
-  '360':'IDN', '764':'THA', '704':'VNM', '458':'MYS', '608':'PHL',
-  '702':'SGP', '512':'OMN', '414':'KWT'
+  '682':'SAU', '784':'ARE', '634':'QAT', '414':'KWT', '512':'OMN',
+  '048':'BHR', '887':'YEM', '376':'ISR', '400':'JOR', '422':'LBN',
+  '760':'SYR', '275':'PSE', '368':'IRQ', '364':'IRN',
+  '586':'PAK', '050':'BGD', '360':'IDN', '764':'THA', '704':'VNM',
+  '458':'MYS', '608':'PHL', '702':'SGP'
 };
 
 const svg  = d3.select('#world-map');
@@ -382,7 +394,6 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
         tooltipEl.style.left = (event.clientX + 12) + 'px';
         tooltipEl.style.top  = (event.clientY - 28) + 'px';
         const label = currentSub ? currentGroup + ' › ' + currentSub : currentGroup;
-        // Tooltip shows region label for grouped countries
         const rl = REGION_LABEL[iso3];
         const displayName = rl ? rl.label : c.name;
         tooltipEl.textContent = displayName + ' — ' + label;
