@@ -1,1 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HSD — SEO GEO Heatmap</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a18; padding: 2rem; }
+h1 { font-size: 20px; font-weight: 500; margin-bottom: 0.25rem; }
+.desc { font-size: 13px; color: #888; margin-bottom: 1rem; }
+.filter-block { margin-bottom: 0.25rem; }
+.filter-row { display: flex; gap: 8px; flex-wrap: wrap; padding: 0.35rem 0; align-items: center; min-height: 38px; }
+.filter-row.hidden { display: none; }
+.filter-label { font-size: 11px; color: #aaa; margin-right: 2px; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.04em; min-width: 110px; }
+.tab-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 16px; border-radius: 999px;
+  border: 1.5px solid #ccc; background: #fff;
+  cursor: pointer; font-size: 14px; font-weight: 400;
+  color: #1a1a18; transition: all 0.15s;
+}
+.tab-btn .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.tab-btn.active { font-weight: 500; border-width: 2px; }
+.tab-btn:hover { background: #f0efeb; }
+.mat-btn {
+  padding: 5px 13px; border-radius: 999px; font-size: 13px;
+  border: 1.5px solid #ccc; background: #fff;
+  cursor: pointer; color: #555; transition: all 0.15s;
+  display: flex; align-items: center; gap: 5px;
+}
+.mat-btn .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.mat-btn:hover { background: #f0efeb; }
+.mat-btn.active { font-weight: 500; color: #fff; }
+.fam-btn {
+  padding: 4px 11px; border-radius: 999px; font-size: 12px;
+  border: 1px solid #ccc; background: #fff;
+  cursor: pointer; color: #666; transition: all 0.15s;
+}
+.fam-btn:hover { background: #f0efeb; }
+.fam-btn.active { font-weight: 600; color: #fff; }
+.prod-btn {
+  padding: 3px 9px; border-radius: 999px; font-size: 11px;
+  border: 1px solid #ddd; background: #fff;
+  cursor: pointer; color: #777; transition: all 0.15s;
+}
+.prod-btn:hover { background: #f0efeb; }
+.prod-btn.active { font-weight: 600; color: #fff; }
+.divider { border: none; border-top: 1px solid #e8e7e3; margin: 0.4rem 0; }
+.subtitle { font-size: 13px; color: #888; margin: 0.4rem 0 0.5rem; }
+.country-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 0.75rem; min-height: 24px; }
+.country-pill { font-size: 12px; padding: 3px 10px; border-radius: 999px; font-weight: 500; color: #fff; }
+.map-wrap { width: 100%; border-radius: 12px; overflow: hidden; background: #eeedea; padding: 0.25rem; }
+svg#world-map { width: 100%; height: auto; display: block; }
+.country { stroke: #fff; stroke-width: 0.3px; transition: opacity 0.2s; cursor: default; }
+.country.active { cursor: pointer; }
+.country.active:hover { opacity: 0.75; }
+.tooltip {
+  position: fixed; background: #fff; border: 0.5px solid #ccc;
+  border-radius: 8px; padding: 6px 12px; font-size: 13px;
+  pointer-events: none; display: none; z-index: 999;
+  color: #1a1a18; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.legend { display: flex; align-items: center; gap: 16px; margin-top: 0.75rem; font-size: 12px; color: #888; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
 
+/* ── Country Explorer ───────────────────────────────────────────────────────── */
+.explorer-wrap {
+  margin-top: 2rem; border-top: 1.5px solid #e8e7e3; padding-top: 1.5rem;
+}
+.explorer-title { font-size: 15px; font-weight: 500; margin-bottom: 0.25rem; }
+.explorer-desc { font-size: 13px; color: #888; margin-bottom: 1rem; }
+.country-select-wrap { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.country-select {
+  padding: 7px 12px; border-radius: 8px; border: 1.5px solid #ccc;
+  background: #fff; font-size: 14px; color: #1a1a18;
+  cursor: pointer; outline: none; min-width: 200px;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px;
+}
+.country-select:focus { border-color: #aaa; }
+.explorer-clear {
+  padding: 6px 14px; border-radius: 999px; border: 1px solid #ccc;
+  background: #fff; font-size: 12px; color: #888; cursor: pointer; transition: all 0.15s;
+}
+.explorer-clear:hover { background: #f0efeb; }
+.explorer-empty { font-size: 13px; color: #aaa; font-style: italic; }
+.explorer-grid { display: flex; flex-direction: column; gap: 12px; }
+.exp-sector-block { background: #fff; border-radius: 10px; border: 1px solid #e8e7e3; overflow: hidden; }
+.exp-sector-header { display: flex; align-items: center; gap: 8px; padding: 10px 14px; font-size: 13px; font-weight: 600; }
+.exp-sector-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.exp-materials { padding: 0 14px 12px; display: flex; flex-direction: column; gap: 8px; }
+.exp-mat-row { display: flex; flex-direction: column; gap: 4px; }
+.exp-mat-label { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: #555; }
+.exp-mat-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.exp-products { display: flex; gap: 5px; flex-wrap: wrap; padding-left: 13px; }
+.exp-prod-tag { font-size: 11px; padding: 2px 8px; border-radius: 999px; color: #fff; font-weight: 500; }
+.exp-sector-only { font-size: 11px; color: #aaa; font-style: italic; padding-left: 13px; padding-bottom: 2px; }
+</style>
+</head>
+<body>
+<h1>HSD — SEO GEO Heatmap</h1>
+<p class="desc">Select a sector, material, product family and specific product to visualise active SEO countries.</p>
+
+<div class="filter-block">
+  <div class="filter-row" id="sector-row"><span class="filter-label">Sector</span></div>
+  <hr class="divider">
+  <div class="filter-row hidden" id="material-row"><span class="filter-label">Material</span></div>
+  <hr class="divider" id="div-family" style="display:none">
+  <div class="filter-row hidden" id="family-row"><span class="filter-label">Product Family</span></div>
+  <hr class="divider" id="div-product" style="display:none">
+  <div class="filter-row hidden" id="product-row"><span class="filter-label">Specific Product</span></div>
+</div>
+
+<p class="subtitle" id="subtitle"></p>
+<div class="country-pills" id="country-pills"></div>
+
+<div class="map-wrap">
+  <svg id="world-map" viewBox="100 80 800 380" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <pattern id="cc-pattern" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+        <rect width="6" height="6" fill="#D3D1C7"/>
+        <line x1="0" y1="3" x2="6" y2="3" stroke="#888780" stroke-width="1"/>
+      </pattern>
+    </defs>
+  </svg>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" id="legend-active-dot"></div><span id="legend-active-label">Active</span></div>
+  <div class="legend-item"><div class="legend-dot" style="background:#E0DED8"></div><span>Not selected</span></div>
+</div>
+<div class="tooltip" id="tooltip"></div>
+
+<!-- ── Country Explorer Panel ─────────────────────────────────────────────── -->
+<div class="explorer-wrap">
+  <h2 class="explorer-title">Country Focus</h2>
+  <p class="explorer-desc">Select a country to see all active sectors, materials and products.</p>
+  <div class="country-select-wrap">
+    <select class="country-select" id="explorer-select">
+      <option value="">— Select a country —</option>
+    </select>
+    <button class="explorer-clear" id="explorer-clear">Clear</button>
+  </div>
+  <div id="explorer-output"><span class="explorer-empty">No country selected.</span></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script>
+// ─── SECTOR → MATERIALS ───────────────────────────────────────────────────────
+const SECTOR_MATERIALS = {
+  'Aerospace':  ['Wood', 'Glass', 'Materia', 'Metal'],
+  'Marine':     ['Wood', 'Glass', 'Stone', 'Materia', 'Metal'],
+  'Automotive': ['Materia', 'Metal'],
+  'Furniture':  ['Wood', 'Glass', 'Stone', 'Materia', 'Metal'],
+  'Robotics':   ['Wood', 'Stone', 'Materia', 'Metal']
+};
+const SECTORS = Object.keys(SECTOR_MATERIALS);
+const SECTOR_COLOR = {
+  'Aerospace':  '#2E6FD9',
+  'Marine':     '#0FA8A8',
+  'Automotive': '#E05C2A',
+  'Furniture':  '#8B5CF6',
+  'Robotics':   '#16A34A'
+};
+
+// ─── MATERIALS ────────────────────────────────────────────────────────────────
+const MATERIALS = {
+  'Wood':          { color:'#EF9F27', solidColor:'#EF9F27', dotBg:'#EF9F27', dotPattern:false },
+  'Glass':         { color:'#378ADD', solidColor:'#378ADD', dotBg:'#378ADD', dotPattern:false },
+  'Stone':         { color:'#E24B4A', solidColor:'#E24B4A', dotBg:'#E24B4A', dotPattern:false },
+  'Materia':       { color:'#7F77DD', solidColor:'#7F77DD', dotBg:'#7F77DD', dotPattern:false },
+  'Metal':         { color:'#5F5E5A', solidColor:'#5F5E5A', dotBg:'#5F5E5A', dotPattern:false },
+  'Customer Care': { color:'url(#cc-pattern)', solidColor:'#888780', dotBg:null, dotPattern:true },
+  'Certification': { color:'#D97706', solidColor:'#D97706', dotBg:'#D97706', dotPattern:false }
+};
+
+// ─── PRODUCT TREE ─────────────────────────────────────────────────────────────
+const PRODUCT_TREE = {
+  'Wood': {
+    'MT line':  ['1120','1090','1073','1055'],
+    'ES3 line': ['ES368/9','ES351','ES350','ES326','ES325','ES327'],
+    'ES7 line': ['ES789','ES779','ES793','ES794','ES750','ES748','ES796','ES735'],
+    'ES8 line': ['ES884'],
+    'ES9 line': ['ES951','ES920','ES950'],
+    'HS line':  ['HS300D','HS300C','HS673','HS655','HS675','HS678','HS778','HS672'],
+    'FA line':  ['FA290','FA290 45°'],
+    'AxC line': ['MK250','MK259'],
+    'BH line':  ['BHZ','BHC'],
+    'SM line':  ['SM137','SM141']
+  },
+  'Glass': {
+    'ES7 line': ['ES789','ES779','ES793','ES794','ES750','ES748','ES796','ES735']
+  },
+  'Stone': {
+    'ES7 line': ['ES789','ES779','ES793','ES794','ES750','ES748','ES796','ES735'],
+    'ES8 line': ['ES884'],
+    'HS line':  ['HS300D','HS300C','HS673','HS655','HS675','HS678','HS778','HS672'],
+    'AxC line': ['MK250','MK259']
+  },
+  'Materia': {
+    'MT line':  ['1120','1090','1073','1055'],
+    'ES3 line': ['ES368/9','ES351','ES350','ES326','ES325','ES327'],
+    'ES5 line': ['ES505','ES510','ES511'],
+    'ES7 line': ['ES789','ES779','ES793','ES794','ES750','ES748','ES796','ES735'],
+    'ES8 line': ['ES884'],
+    'ES9 line': ['ES951','ES920','ES950'],
+    'HS line':  ['HS300D','HS300C','HS673','HS655','HS675','HS678','HS778','HS672'],
+    'HST line': ['HST610','HST810','HST910'],
+    'AxC line': ['MK250','MK259'],
+    'SM line':  ['SM137','SM141']
+  },
+  'Metal': {
+    'ES5 line':  ['ES505','ES510','ES511'],
+    'ES10 line': ['ES1040','ES1000','ES1020'],
+    'ES60 line': ['ES6000'],
+    'HS line':   ['HS300D','HS300C','HS673','HS655','HS675','HS678','HS778','HS672'],
+    'FA line':   ['FA290','FA290 45°'],
+    'HST line':  ['HST610','HST810','HST910'],
+    'ESiMill':   ['ESiMill200']
+  },
+  'Customer Care': {},
+  'Certification': {}
+};
+
+// ─── REGION LABELS ────────────────────────────────────────────────────────────
+const REGION_LABEL = {
+  'SAU':{ label:'Middle East', region:'ME' }, 'ARE':{ label:'Middle East', region:'ME' },
+  'QAT':{ label:'Middle East', region:'ME' }, 'KWT':{ label:'Middle East', region:'ME' },
+  'OMN':{ label:'Middle East', region:'ME' }, 'BHR':{ label:'Middle East', region:'ME' },
+  'YEM':{ label:'Middle East', region:'ME' }, 'ISR':{ label:'Middle East', region:'ME' },
+  'JOR':{ label:'Middle East', region:'ME' }, 'LBN':{ label:'Middle East', region:'ME' },
+  'SYR':{ label:'Middle East', region:'ME' }, 'PSE':{ label:'Middle East', region:'ME' },
+  'IRQ':{ label:'Middle East', region:'ME' }, 'IRN':{ label:'Middle East', region:'ME' },
+  'MEX':{ label:'Latam', region:'LATAM' }, 'BRA':{ label:'Latam', region:'LATAM' },
+  'ARG':{ label:'Latam', region:'LATAM' }, 'CHL':{ label:'Latam', region:'LATAM' },
+  'COL':{ label:'Latam', region:'LATAM' }, 'PER':{ label:'Latam', region:'LATAM' },
+  'BOL':{ label:'Latam', region:'LATAM' }, 'ECU':{ label:'Latam', region:'LATAM' },
+  'GUY':{ label:'Latam', region:'LATAM' }, 'PRY':{ label:'Latam', region:'LATAM' },
+  'SUR':{ label:'Latam', region:'LATAM' }, 'URY':{ label:'Latam', region:'LATAM' },
+  'VEN':{ label:'Latam', region:'LATAM' }, 'GTM':{ label:'Latam', region:'LATAM' },
+  'BLZ':{ label:'Latam', region:'LATAM' }, 'SLV':{ label:'Latam', region:'LATAM' },
+  'HND':{ label:'Latam', region:'LATAM' }, 'NIC':{ label:'Latam', region:'LATAM' },
+  'CRI':{ label:'Latam', region:'LATAM' }, 'PAN':{ label:'Latam', region:'LATAM' },
+  'AUS':{ label:'Australia & NZ', region:'AUSNZ' },
+  'NZL':{ label:'Australia & NZ', region:'AUSNZ' }
+};
+
+// ─── DATA HELPERS ─────────────────────────────────────────────────────────────
+function emptyFamilies(mat) {
+  const out = {};
+  const tree = PRODUCT_TREE[mat] || {};
+  Object.keys(tree).forEach(function(fam) {
+    out[fam] = { _all: false, products: {} };
+    tree[fam].forEach(function(p) { out[fam].products[p] = false; });
+  });
+  return out;
+}
+
+function emptyCountry(name) {
+  const active = {};
+  SECTORS.forEach(function(s) {
+    active[s] = { _all: false, materials: {} };
+    SECTOR_MATERIALS[s].forEach(function(m) {
+      active[s].materials[m] = { _all: false, families: emptyFamilies(m) };
+    });
+  });
+  return { name, active };
+}
+
+// Shorthand to set a product active and propagate _all flags up
+function setProduct(country, sector, material, family, product, val) {
+  val = val !== false;
+  const c = country.active[sector];
+  if (!c) return;
+  const mat = c.materials[material];
+  if (!mat) return;
+  const fam = mat.families[family];
+  if (!fam) return;
+  if (product) {
+    fam.products[product] = val;
+  }
+  // recompute _all at family level
+  fam._all = Object.values(fam.products).some(Boolean);
+  // recompute _all at material level
+  mat._all = Object.values(mat.families).some(function(f) { return f._all; });
+  // recompute _all at sector level
+  c._all = Object.values(c.materials).some(function(m) { return m._all; });
+}
+
+// Set sector-level only (no product, like Japan)
+function setSectorOnly(country, sector, val) {
+  val = val !== false;
+  const c = country.active[sector];
+  if (!c) return;
+  c._all = val;
+}
+
+// ─── COUNTRIES ────────────────────────────────────────────────────────────────
+// Europe (EMEA)
+const EUR_ISOS = ['ITA','FRA','GBR','DEU','ESP','NLD','BEL','AUT','CHE','POL',
+                  'CZE','HUN','ROU','BGR','HRV','SVN','SVK','IRL','DNK','SWE',
+                  'FIN','NOR','PRT','GRC','LUX'];
+
+const COUNTRIES = {};
+
+// Init all countries
+const ALL_ISOS = [
+  ...EUR_ISOS,
+  'USA','CAN',
+  'CHN','TWN','JPN','KOR',
+  'TUR','AUS','NZL','IND',
+  'SAU','ARE','QAT','KWT','OMN','BHR','YEM','ISR','JOR','LBN','SYR','PSE','IRQ','IRN',
+  'MEX','BRA','ARG','CHL','COL','PER','BOL','ECU','GUY','PRY','SUR','URY','VEN',
+  'GTM','BLZ','SLV','HND','NIC','CRI','PAN'
+];
+
+const COUNTRY_NAMES = {
+  'ITA':'Italy','FRA':'France','GBR':'United Kingdom','DEU':'Germany','ESP':'Spain',
+  'NLD':'Netherlands','BEL':'Belgium','AUT':'Austria','CHE':'Switzerland','POL':'Poland',
+  'CZE':'Czech Republic','HUN':'Hungary','ROU':'Romania','BGR':'Bulgaria','HRV':'Croatia',
+  'SVN':'Slovenia','SVK':'Slovakia','IRL':'Ireland','DNK':'Denmark','SWE':'Sweden',
+  'FIN':'Finland','NOR':'Norway','PRT':'Portugal','GRC':'Greece','LUX':'Luxembourg',
+  'USA':'United States','CAN':'Canada',
+  'CHN':'China','TWN':'Taiwan','JPN':'Japan','KOR':'South Korea',
+  'TUR':'Turkey','AUS':'Australia','NZL':'New Zealand','IND':'India',
+  'SAU':'Saudi Arabia','ARE':'UAE','QAT':'Qatar','KWT':'Kuwait','OMN':'Oman',
+  'BHR':'Bahrain','YEM':'Yemen','ISR':'Israel','JOR':'Jordan','LBN':'Lebanon',
+  'SYR':'Syria','PSE':'Palestine','IRQ':'Iraq','IRN':'Iran',
+  'MEX':'Mexico','BRA':'Brazil','ARG':'Argentina','CHL':'Chile','COL':'Colombia',
+  'PER':'Peru','BOL':'Bolivia','ECU':'Ecuador','GUY':'Guyana','PRY':'Paraguay',
+  'SUR':'Suriname','URY':'Uruguay','VEN':'Venezuela','GTM':'Guatemala','BLZ':'Belize',
+  'SLV':'El Salvador','HND':'Honduras','NIC':'Nicaragua','CRI':'Costa Rica','PAN':'Panama'
+};
+
+ALL_ISOS.forEach(function(iso) {
+  COUNTRIES[iso] = emptyCountry(COUNTRY_NAMES[iso] || iso);
+});
+
+// ── EMEA: populate data ───────────────────────────────────────────────────────
+// HS-672 → Sector: all relevant (Materia/HS line/HS672 + Metal/HS line/HS672)
+// ESiMill → Metal / ESiMill / ESiMill200 — sectors where Metal exists
+// HST-810 → Aerospace+Automotive / Materia+Metal / HST line / HST810
+// HST-610 → Aerospace+Automotive / Materia+Metal / HST line / HST610
+
+EUR_ISOS.forEach(function(iso) {
+  const c = COUNTRIES[iso];
+  // HS672 — Materia, sectors that include Materia: Aerospace, Marine, Furniture, Robotics (not Automotive which has no HS line for Materia... but Materia is in Automotive)
+  // Materia has HS line → set for all sectors that include Materia
+  ['Aerospace','Marine','Furniture','Robotics'].forEach(function(s) {
+    setProduct(c, s, 'Materia', 'HS line', 'HS672');
+  });
+  // HS672 also in Metal
+  ['Aerospace','Marine','Furniture'].forEach(function(s) {
+    setProduct(c, s, 'Metal', 'HS line', 'HS672');
+  });
+
+  // ESiMill200 → Metal / ESiMill → sectors with Metal: Aerospace, Marine, Automotive, Furniture
+  ['Aerospace','Marine','Automotive','Furniture'].forEach(function(s) {
+    setProduct(c, s, 'Metal', 'ESiMill', 'ESiMill200');
+  });
+
+  // HST810 → Aerospace / Materia + Metal / HST line
+  setProduct(c, 'Aerospace', 'Materia', 'HST line', 'HST810');
+  setProduct(c, 'Aerospace', 'Metal',   'HST line', 'HST810');
+
+  // HST610 → Aerospace + Automotive / Materia + Metal / HST line
+  setProduct(c, 'Aerospace',  'Materia', 'HST line', 'HST610');
+  setProduct(c, 'Aerospace',  'Metal',   'HST line', 'HST610');
+  setProduct(c, 'Automotive', 'Materia', 'HST line', 'HST610');
+  setProduct(c, 'Automotive', 'Metal',   'HST line', 'HST610');
+});
+
+// ── USA + CANADA ──────────────────────────────────────────────────────────────
+['USA','CAN'].forEach(function(iso) {
+  const c = COUNTRIES[iso];
+  // HS672 (same as EMEA)
+  ['Aerospace','Marine','Furniture','Robotics'].forEach(function(s) {
+    setProduct(c, s, 'Materia', 'HS line', 'HS672');
+  });
+  ['Aerospace','Marine','Furniture'].forEach(function(s) {
+    setProduct(c, s, 'Metal', 'HS line', 'HS672');
+  });
+  // HST810
+  setProduct(c, 'Aerospace', 'Materia', 'HST line', 'HST810');
+  setProduct(c, 'Aerospace', 'Metal',   'HST line', 'HST810');
+  // HST910
+  setProduct(c, 'Aerospace', 'Materia', 'HST line', 'HST910');
+  setProduct(c, 'Aerospace', 'Metal',   'HST line', 'HST910');
+  // HST610
+  setProduct(c, 'Aerospace',  'Materia', 'HST line', 'HST610');
+  setProduct(c, 'Aerospace',  'Metal',   'HST line', 'HST610');
+  setProduct(c, 'Automotive', 'Materia', 'HST line', 'HST610');
+  setProduct(c, 'Automotive', 'Metal',   'HST line', 'HST610');
+  // Customer Care — set sector-level _all directly for all sectors
+  SECTORS.forEach(function(s) { setSectorOnly(c, s, true); });
+  // Certification — not tied to sector in our model; mark at Aerospace as representative
+  // (Customer Care and Certification are not in SECTOR_MATERIALS so handled via setSectorOnly above)
+});
+
+// ── CHINA — same as EMEA ─────────────────────────────────────────────────────
+(function() {
+  const c = COUNTRIES['CHN'];
+  ['Aerospace','Marine','Furniture','Robotics'].forEach(function(s) {
+    setProduct(c, s, 'Materia', 'HS line', 'HS672');
+  });
+  ['Aerospace','Marine','Furniture'].forEach(function(s) {
+    setProduct(c, s, 'Metal', 'HS line', 'HS672');
+    setProduct(c, s, 'Metal', 'ESiMill', 'ESiMill200');
+  });
+  setProduct(c, 'Automotive', 'Metal', 'ESiMill', 'ESiMill200');
+  setProduct(c, 'Aerospace', 'Materia', 'HST line', 'HST810');
+  setProduct(c, 'Aerospace', 'Metal',   'HST line', 'HST810');
+  setProduct(c, 'Aerospace',  'Materia', 'HST line', 'HST610');
+  setProduct(c, 'Aerospace',  'Metal',   'HST line', 'HST610');
+  setProduct(c, 'Automotive', 'Materia', 'HST line', 'HST610');
+  setProduct(c, 'Automotive', 'Metal',   'HST line', 'HST610');
+})();
+
+// ── TAIWAN ───────────────────────────────────────────────────────────────────
+// ESiMill200, HST810, ES5 line
+(function() {
+  const c = COUNTRIES['TWN'];
+  // ESiMill200 → Metal
+  ['Aerospace','Marine','Automotive','Furniture'].forEach(function(s) {
+    setProduct(c, s, 'Metal', 'ESiMill', 'ESiMill200');
+  });
+  // HST810 → Aerospace / Materia + Metal
+  setProduct(c, 'Aerospace', 'Materia', 'HST line', 'HST810');
+  setProduct(c, 'Aerospace', 'Metal',   'HST line', 'HST810');
+  // ES5 line (Serie 5) → Materia + Metal
+  ['ES505','ES510','ES511'].forEach(function(p) {
+    ['Aerospace','Marine','Automotive','Furniture'].forEach(function(s) {
+      setProduct(c, s, 'Metal',   'ES5 line', p);
+    });
+    ['Aerospace','Marine','Furniture','Robotics'].forEach(function(s) {
+      setProduct(c, s, 'Materia', 'ES5 line', p);
+    });
+  });
+})();
+
+// ── JAPAN — sector level only (Automotive + Aerospace) ───────────────────────
+(function() {
+  const c = COUNTRIES['JPN'];
+  setSectorOnly(c, 'Automotive', true);
+  setSectorOnly(c, 'Aerospace',  true);
+})();
+
+// Korea — no data (stays empty)
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let curSector   = null;
+let curMaterial = null;
+let curFamily   = null;
+let curProduct  = null;
+
+// ─── ACTIVE CHECK ─────────────────────────────────────────────────────────────
+function isCountryActive(iso3) {
+  const c = COUNTRIES[iso3];
+  if (!c || !curSector) return false;
+  const sd = c.active[curSector];
+  if (!sd) return false;
+  if (!curMaterial) return sd._all;
+  const md = sd.materials[curMaterial];
+  if (!md) return false;
+  if (!curFamily) return md._all;
+  const fd = md.families[curFamily];
+  if (!fd) return false;
+  if (!curProduct) return fd._all;
+  return fd.products[curProduct] === true;
+}
+
+function getActiveColor() {
+  if (curMaterial) return MATERIALS[curMaterial].solidColor;
+  if (curSector)   return SECTOR_COLOR[curSector];
+  return '#888';
+}
+function getMapFillColor() {
+  if (curMaterial) return MATERIALS[curMaterial].color;
+  if (curSector)   return SECTOR_COLOR[curSector];
+  return '#888';
+}
+function getActiveCountries() {
+  return Object.entries(COUNTRIES)
+    .filter(function(e) { return isCountryActive(e[0]); })
+    .map(function(e) { return { iso: e[0], name: e[1].name }; });
+}
+function getBreadcrumb() {
+  const parts = [];
+  if (curSector)   parts.push(curSector);
+  if (curMaterial) parts.push(curMaterial);
+  if (curFamily)   parts.push(curFamily);
+  if (curProduct)  parts.push(curProduct);
+  return parts.join(' › ');
+}
+
+// ─── UI ───────────────────────────────────────────────────────────────────────
+const subtitleEl  = document.getElementById('subtitle');
+const pillsEl     = document.getElementById('country-pills');
+const tooltipEl   = document.getElementById('tooltip');
+const legendDot   = document.getElementById('legend-active-dot');
+const legendLbl   = document.getElementById('legend-active-label');
+const materialRow = document.getElementById('material-row');
+const familyRow   = document.getElementById('family-row');
+const productRow  = document.getElementById('product-row');
+const divFamily   = document.getElementById('div-family');
+const divProduct  = document.getElementById('div-product');
+
+function updateSubtitle() {
+  const active = getActiveCountries();
+  const col = getActiveColor();
+  pillsEl.innerHTML = '';
+  const seenRegions = new Set();
+  const pills = [];
+  active.forEach(function(c) {
+    const rl = REGION_LABEL[c.iso];
+    if (rl) {
+      if (!seenRegions.has(rl.region)) { seenRegions.add(rl.region); pills.push(rl.label); }
+    } else { pills.push(c.name); }
+  });
+  const n = pills.length;
+  subtitleEl.textContent = (getBreadcrumb() || '—') + ' — ' + n + (n === 1 ? ' active area' : ' active areas');
+  if (n === 0) {
+    const empty = document.createElement('span');
+    empty.style.cssText = 'font-size:12px;color:#888;font-style:italic;';
+    empty.textContent = 'No active areas';
+    pillsEl.appendChild(empty);
+  } else {
+    pills.forEach(function(p) {
+      const pill = document.createElement('span');
+      pill.className = 'country-pill';
+      pill.style.background = col;
+      pill.textContent = p;
+      pillsEl.appendChild(pill);
+    });
+  }
+}
+
+function updateLegend() {
+  const mc = curMaterial ? MATERIALS[curMaterial] : null;
+  if (mc && mc.dotPattern) {
+    legendDot.style.cssText = 'width:10px;height:10px;border-radius:50%;background:repeating-linear-gradient(45deg,#bbb 0px,#bbb 1px,#e8e6e0 1px,#e8e6e0 3px);border:0.5px solid #999;';
+  } else {
+    legendDot.style.cssText = 'width:10px;height:10px;border-radius:50%;background:' + getActiveColor() + ';';
+  }
+  legendLbl.textContent = (curProduct || curFamily || curMaterial || curSector || '—') + ' active';
+}
+
+function updateMap() {
+  d3.selectAll('.country')
+    .attr('fill', function() { return isCountryActive(this.dataset.iso3) ? getMapFillColor() : '#E0DED8'; })
+    .classed('active', function() { return isCountryActive(this.dataset.iso3); });
+}
+
+function refreshAll() { updateSubtitle(); updateLegend(); updateMap(); }
+
+// ─── SECTOR BUTTONS ───────────────────────────────────────────────────────────
+const sectorRow = document.getElementById('sector-row');
+function updateSectorBtns() {
+  sectorRow.querySelectorAll('.tab-btn').forEach(function(b) {
+    const on = b.dataset.val === curSector;
+    b.classList.toggle('active', on);
+    b.style.borderColor = on ? SECTOR_COLOR[b.dataset.val] : '';
+    b.style.color       = on ? SECTOR_COLOR[b.dataset.val] : '';
+  });
+}
+SECTORS.forEach(function(s) {
+  const btn = document.createElement('button');
+  btn.className = 'tab-btn'; btn.dataset.val = s;
+  const dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = SECTOR_COLOR[s];
+  btn.appendChild(dot); btn.appendChild(document.createTextNode(s));
+  btn.addEventListener('click', function() {
+    curSector = (curSector === s) ? null : s;
+    curMaterial = null; curFamily = null; curProduct = null;
+    updateSectorBtns(); buildMaterialRow(); buildFamilyRow(); buildProductRow(); refreshAll();
+  });
+  sectorRow.appendChild(btn);
+});
+
+// ─── MATERIAL BUTTONS ─────────────────────────────────────────────────────────
+function buildMaterialRow() {
+  materialRow.querySelectorAll('.mat-btn').forEach(function(b) { b.remove(); });
+  if (!curSector) { materialRow.classList.add('hidden'); return; }
+  materialRow.classList.remove('hidden');
+  (SECTOR_MATERIALS[curSector] || []).forEach(function(m) {
+    const mc = MATERIALS[m];
+    const btn = document.createElement('button');
+    btn.className = 'mat-btn'; btn.dataset.val = m;
+    const dot = document.createElement('span'); dot.className = 'dot';
+    if (mc.dotPattern) {
+      dot.style.cssText = 'background:repeating-linear-gradient(45deg,#bbb 0px,#bbb 1px,#e8e6e0 1px,#e8e6e0 3px);border:0.5px solid #999;width:7px;height:7px;border-radius:50%;flex-shrink:0;';
+    } else { dot.style.background = mc.dotBg; }
+    btn.appendChild(dot); btn.appendChild(document.createTextNode(m));
+    btn.addEventListener('click', function() {
+      curMaterial = (curMaterial === m) ? null : m;
+      curFamily = null; curProduct = null;
+      updateMaterialBtns(); buildFamilyRow(); buildProductRow(); refreshAll();
+    });
+    materialRow.appendChild(btn);
+  });
+  updateMaterialBtns();
+}
+function updateMaterialBtns() {
+  materialRow.querySelectorAll('.mat-btn').forEach(function(b) {
+    const m = b.dataset.val; const on = m === curMaterial; const mc = MATERIALS[m];
+    b.classList.toggle('active', on);
+    b.style.background  = on ? mc.solidColor || '#888' : '';
+    b.style.borderColor = on ? mc.solidColor || '#888' : '';
+    b.style.color       = on ? '#fff' : '';
+  });
+}
+
+// ─── FAMILY BUTTONS ───────────────────────────────────────────────────────────
+function buildFamilyRow() {
+  familyRow.querySelectorAll('.fam-btn').forEach(function(b) { b.remove(); });
+  if (!curMaterial) { familyRow.classList.add('hidden'); divFamily.style.display = 'none'; return; }
+  const keys = Object.keys(PRODUCT_TREE[curMaterial] || {});
+  if (!keys.length) { familyRow.classList.add('hidden'); divFamily.style.display = 'none'; return; }
+  divFamily.style.display = ''; familyRow.classList.remove('hidden');
+  keys.forEach(function(fam) {
+    const btn = document.createElement('button');
+    btn.className = 'fam-btn'; btn.dataset.val = fam; btn.textContent = fam;
+    btn.addEventListener('click', function() {
+      curFamily = (curFamily === fam) ? null : fam; curProduct = null;
+      updateFamilyBtns(); buildProductRow(); refreshAll();
+    });
+    familyRow.appendChild(btn);
+  });
+  updateFamilyBtns();
+}
+function updateFamilyBtns() {
+  const col = curMaterial ? MATERIALS[curMaterial].solidColor : '#888';
+  familyRow.querySelectorAll('.fam-btn').forEach(function(b) {
+    const on = b.dataset.val === curFamily;
+    b.classList.toggle('active', on);
+    b.style.background = on ? col : ''; b.style.borderColor = on ? col : ''; b.style.color = on ? '#fff' : '';
+  });
+}
+
+// ─── PRODUCT BUTTONS ──────────────────────────────────────────────────────────
+function buildProductRow() {
+  productRow.querySelectorAll('.prod-btn').forEach(function(b) { b.remove(); });
+  if (!curFamily || !curMaterial) { productRow.classList.add('hidden'); divProduct.style.display = 'none'; return; }
+  const prods = (PRODUCT_TREE[curMaterial] || {})[curFamily] || [];
+  if (!prods.length) { productRow.classList.add('hidden'); divProduct.style.display = 'none'; return; }
+  divProduct.style.display = ''; productRow.classList.remove('hidden');
+  prods.forEach(function(p) {
+    const btn = document.createElement('button');
+    btn.className = 'prod-btn'; btn.dataset.val = p; btn.textContent = p;
+    btn.addEventListener('click', function() {
+      curProduct = (curProduct === p) ? null : p; updateProductBtns(); refreshAll();
+    });
+    productRow.appendChild(btn);
+  });
+  updateProductBtns();
+}
+function updateProductBtns() {
+  const col = curMaterial ? MATERIALS[curMaterial].solidColor : '#888';
+  productRow.querySelectorAll('.prod-btn').forEach(function(b) {
+    const on = b.dataset.val === curProduct;
+    b.classList.toggle('active', on);
+    b.style.background = on ? col : ''; b.style.borderColor = on ? col : ''; b.style.color = on ? '#fff' : '';
+  });
+}
+
+// ─── ISO MAP ─────────────────────────────────────────────────────────────────
+const ISO_MAP = {
+  '840':'USA','124':'CAN','484':'MEX','032':'ARG','076':'BRA',
+  '152':'CHL','170':'COL','604':'PER','068':'BOL','218':'ECU',
+  '328':'GUY','600':'PRY','740':'SUR','858':'URY','862':'VEN',
+  '276':'DEU','380':'ITA','250':'FRA','724':'ESP','826':'GBR',
+  '442':'LUX','528':'NLD','056':'BEL','040':'AUT','756':'CHE',
+  '616':'POL','203':'CZE','348':'HUN','642':'ROU','100':'BGR',
+  '191':'HRV','705':'SVN','703':'SVK','372':'IRL','208':'DNK',
+  '752':'SWE','246':'FIN','578':'NOR','620':'PRT','300':'GRC',
+  '792':'TUR','804':'UKR','643':'RUS','356':'IND','156':'CHN',
+  '158':'TWN','392':'JPN','410':'KOR','036':'AUS','554':'NZL',
+  '710':'ZAF','818':'EGY','012':'DZA','504':'MAR','566':'NGA','404':'KEN',
+  '682':'SAU','784':'ARE','634':'QAT','414':'KWT','512':'OMN',
+  '048':'BHR','887':'YEM','376':'ISR','400':'JOR','422':'LBN',
+  '760':'SYR','275':'PSE','368':'IRQ','364':'IRN',
+  '586':'PAK','050':'BGD','360':'IDN','764':'THA','704':'VNM',
+  '320':'GTM','084':'BLZ','222':'SLV','340':'HND','558':'NIC',
+  '188':'CRI','591':'PAN','458':'MYS','608':'PHL','702':'SGP'
+};
+
+// ─── MAP RENDER ───────────────────────────────────────────────────────────────
+const svg  = d3.select('#world-map');
+const proj = d3.geoNaturalEarth1().scale(170).translate([500, 280]);
+const path = d3.geoPath().projection(proj);
+
+fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+  .then(function(r) { return r.json(); })
+  .then(function(world) {
+    const countries = topojson.feature(world, world.objects.countries);
+    svg.selectAll('.country')
+      .data(countries.features)
+      .enter().append('path')
+      .attr('class','country')
+      .attr('d', path)
+      .each(function(d) {
+        var numId = parseInt(d.id, 10);
+        var paddedId = numId ? String(numId).padStart(3,'0') : '';
+        this.dataset.iso3 = ISO_MAP[paddedId] || '';
+      })
+      .on('mousemove', function(event) {
+        const iso3 = this.dataset.iso3;
+        if (!isCountryActive(iso3)) return;
+        const c = COUNTRIES[iso3];
+        tooltipEl.style.display = 'block';
+        tooltipEl.style.left = (event.clientX + 12) + 'px';
+        tooltipEl.style.top  = (event.clientY - 28) + 'px';
+        const rl = REGION_LABEL[iso3];
+        tooltipEl.textContent = (rl ? rl.label : c.name) + ' — ' + getBreadcrumb();
+      })
+      .on('mouseleave', function() { tooltipEl.style.display = 'none'; });
+    refreshAll();
+  });
+
+// ── COUNTRY EXPLORER ──────────────────────────────────────────────────────────
+(function() {
+  const select = document.getElementById('explorer-select');
+  const output = document.getElementById('explorer-output');
+  const clearBtn = document.getElementById('explorer-clear');
+
+  // Populate dropdown — sorted by name
+  const sorted = Object.entries(COUNTRIES).sort(function(a,b) {
+    return a[1].name.localeCompare(b[1].name);
+  });
+  sorted.forEach(function(entry) {
+    const iso = entry[0], cdata = entry[1];
+    const opt = document.createElement('option');
+    opt.value = iso; opt.textContent = cdata.name;
+    select.appendChild(opt);
+  });
+
+  function renderCountry(iso) {
+    const c = COUNTRIES[iso];
+    if (!c) { output.innerHTML = '<span class="explorer-empty">No country selected.</span>'; return; }
+
+    // Collect active data
+    const activeSectors = [];
+    SECTORS.forEach(function(s) {
+      const sd = c.active[s];
+      if (!sd) return;
+
+      // Sector-only active (e.g. Japan)
+      if (sd._all && Object.values(sd.materials).every(function(m){ return !m._all; })) {
+        activeSectors.push({ sector: s, sectorOnly: true, materials: [] });
+        return;
+      }
+
+      const activeMats = [];
+      Object.keys(sd.materials).forEach(function(mat) {
+        const md = sd.materials[mat];
+        if (!md._all) return;
+        const activeProds = [];
+        Object.keys(md.families).forEach(function(fam) {
+          const fd = md.families[fam];
+          if (!fd._all) return;
+          Object.keys(fd.products).forEach(function(p) {
+            if (fd.products[p]) activeProds.push({ fam, prod: p });
+          });
+        });
+        activeMats.push({ mat, prods: activeProds });
+      });
+
+      if (activeMats.length > 0) {
+        activeSectors.push({ sector: s, sectorOnly: false, materials: activeMats });
+      }
+    });
+
+    if (activeSectors.length === 0) {
+      output.innerHTML = '<span class="explorer-empty">No active data for this country yet.</span>';
+      return;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'explorer-grid';
+
+    activeSectors.forEach(function(sd) {
+      const block = document.createElement('div');
+      block.className = 'exp-sector-block';
+
+      const header = document.createElement('div');
+      header.className = 'exp-sector-header';
+      header.style.borderBottom = '1px solid #f0efeb';
+      const dot = document.createElement('span');
+      dot.className = 'exp-sector-dot';
+      dot.style.background = SECTOR_COLOR[sd.sector];
+      header.appendChild(dot);
+      header.appendChild(document.createTextNode(sd.sector));
+      block.appendChild(header);
+
+      const matsWrap = document.createElement('div');
+      matsWrap.className = 'exp-materials';
+
+      if (sd.sectorOnly) {
+        const note = document.createElement('div');
+        note.className = 'exp-sector-only';
+        note.textContent = 'Sector-level focus (brand awareness)';
+        matsWrap.appendChild(note);
+      } else {
+        sd.materials.forEach(function(md) {
+          const mc = MATERIALS[md.mat];
+          const row = document.createElement('div');
+          row.className = 'exp-mat-row';
+
+          const label = document.createElement('div');
+          label.className = 'exp-mat-label';
+          const mdot = document.createElement('span');
+          mdot.className = 'exp-mat-dot';
+          if (mc && mc.dotPattern) {
+            mdot.style.cssText = 'width:7px;height:7px;border-radius:50%;background:repeating-linear-gradient(45deg,#bbb 0px,#bbb 1px,#e8e6e0 1px,#e8e6e0 3px);border:0.5px solid #999;flex-shrink:0;';
+          } else if (mc) {
+            mdot.style.background = mc.dotBg || mc.solidColor;
+          }
+          label.appendChild(mdot);
+          label.appendChild(document.createTextNode(md.mat));
+          row.appendChild(label);
+
+          if (md.prods.length > 0) {
+            const prodsWrap = document.createElement('div');
+            prodsWrap.className = 'exp-products';
+            // Group by family for clarity
+            const byFam = {};
+            md.prods.forEach(function(p) {
+              if (!byFam[p.fam]) byFam[p.fam] = [];
+              byFam[p.fam].push(p.prod);
+            });
+            Object.keys(byFam).forEach(function(fam) {
+              byFam[fam].forEach(function(prod) {
+                const tag = document.createElement('span');
+                tag.className = 'exp-prod-tag';
+                tag.style.background = (mc && mc.solidColor) ? mc.solidColor : '#888';
+                tag.textContent = prod;
+                prodsWrap.appendChild(tag);
+              });
+            });
+            row.appendChild(prodsWrap);
+          }
+          matsWrap.appendChild(row);
+        });
+      }
+
+      block.appendChild(matsWrap);
+      grid.appendChild(block);
+    });
+
+    output.innerHTML = '';
+    output.appendChild(grid);
+  }
+
+  select.addEventListener('change', function() {
+    if (select.value) renderCountry(select.value);
+    else output.innerHTML = '<span class="explorer-empty">No country selected.</span>';
+  });
+
+  clearBtn.addEventListener('click', function() {
+    select.value = '';
+    output.innerHTML = '<span class="explorer-empty">No country selected.</span>';
+  });
+})();
+
+</script>
+
+</body>
+</html>
