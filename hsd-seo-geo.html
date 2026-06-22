@@ -328,21 +328,30 @@ function setSectorOnly(country, sector, val) {
 
 // ─── COUNTRIES ────────────────────────────────────────────────────────────────
 // Europe (EMEA)
-const EUR_ISOS = ['ITA','FRA','GBR','DEU','ESP','NLD','BEL','AUT','CHE','POL',
-                  'CZE','HUN','ROU','BGR','HRV','SVN','SVK','IRL','DNK','SWE',
-                  'FIN','NOR','PRT','GRC','LUX'];
+const EUR_ISOS = [
+  'AND','AUT','BEL','BGR','HRV','CZE','DNK','EST','FIN','FRA',
+  'DEU','GRC','HUN','ISL','IRL','ITA','LVA','LIE','LTU','LUX',
+  'MCO','NLD','NOR','POL','PRT','ROU','SMR','SVK','SVN','ESP',
+  'SWE','CHE','TUR','GBR',  // Eastern Europe
+  'UKR','BLR','MDA','ALB','BIH','SRB','MNE','MKD','XKX'
+];
 
 const COUNTRIES = {};
 
 // Init all countries
 const ALL_ISOS = [
-  ...EUR_ISOS,
-  'USA','CAN',
-  'CHN','TWN','JPN','KOR',
-  'TUR','AUS','NZL','IND',
-  'SAU','ARE','QAT','KWT','OMN','BHR','YEM','ISR','JOR','LBN','SYR','PSE','IRQ','IRN',
-  'MEX','BRA','ARG','CHL','COL','PER','BOL','ECU','GUY','PRY','SUR','URY','VEN',
-  'GTM','BLZ','SLV','HND','NIC','CRI','PAN'
+  // EMEA
+  'AND','AUT','BEL','BGR','HRV','CZE','DNK','EST','FIN','FRA',
+  'DEU','GRC','HUN','ISL','IRL','ITA','LVA','LIE','LTU','LUX',
+  'MCO','NLD','NOR','POL','PRT','ROU','SMR','SVK','SVN','ESP',
+  'SWE','CHE','TUR','GBR',  'UKR','BLR','MDA','ALB','BIH','SRB','MNE','MKD','XKX',
+  // Americas
+  'USA','CAN','MEX','BRA','ARG','CHL','COL','PER','BOL','ECU','GUY','PRY','SUR','URY',
+  'VEN','GTM','BLZ','SLV','HND','NIC','CRI','PAN',
+  // APAC
+  'CHN','TWN','JPN','KOR','AUS','NZL','IND',
+  // ME (kept for data structure, not shown on pills)
+  'SAU','ARE','QAT','KWT','OMN','BHR','YEM','ISR','JOR','LBN','SYR','PSE','IRQ','IRN'
 ];
 
 const COUNTRY_NAMES = {
@@ -350,7 +359,16 @@ const COUNTRY_NAMES = {
   'NLD':'Netherlands','BEL':'Belgium','AUT':'Austria','CHE':'Switzerland','POL':'Poland',
   'CZE':'Czech Republic','HUN':'Hungary','ROU':'Romania','BGR':'Bulgaria','HRV':'Croatia',
   'SVN':'Slovenia','SVK':'Slovakia','IRL':'Ireland','DNK':'Denmark','SWE':'Sweden',
-  'FIN':'Finland','NOR':'Norway','PRT':'Portugal','GRC':'Greece','LUX':'Luxembourg',
+  'ALB':'Albania','AND':'Andorra','AUT':'Austria','BLR':'Belarus','BEL':'Belgium',
+  'BIH':'Bosnia and Herzegovina','BGR':'Bulgaria','HRV':'Croatia','CYP':'Cyprus',
+  'CZE':'Czech Republic','DNK':'Denmark','EST':'Estonia','FIN':'Finland','FRA':'France',
+  'DEU':'Germany','GRC':'Greece','HUN':'Hungary','ISL':'Iceland','IRL':'Ireland',
+  'ITA':'Italy','XKX':'Kosovo','LVA':'Latvia','LIE':'Liechtenstein','LTU':'Lithuania',
+  'LUX':'Luxembourg','MLT':'Malta','MDA':'Moldova','MCO':'Monaco','MNE':'Montenegro',
+  'NLD':'Netherlands','MKD':'North Macedonia','NOR':'Norway','POL':'Poland','PRT':'Portugal',
+  'ROU':'Romania','SMR':'San Marino','SRB':'Serbia','SVK':'Slovakia',
+  'SVN':'Slovenia','ESP':'Spain','SWE':'Sweden','CHE':'Switzerland','TUR':'Turkey',
+  'UKR':'Ukraine','GBR':'United Kingdom',
   'USA':'United States','CAN':'Canada',
   'CHN':'China','TWN':'Taiwan','JPN':'Japan','KOR':'South Korea',
   'TUR':'Turkey','AUS':'Australia','NZL':'New Zealand','IND':'India',
@@ -537,10 +555,25 @@ const divFamily   = document.getElementById('div-family');
 const divProduct  = document.getElementById('div-product');
 
 // Macro area grouping for pills
+const EASTERN_EU = ['UKR','BLR','MDA','ALB','BIH','SRB','MNE','MKD','XKX'];
+const WESTERN_EU = [
+  'AND','AUT','BEL','BGR','HRV','CZE','DNK','EST','FIN','FRA',
+  'DEU','GRC','HUN','ISL','IRL','ITA','LVA','LIE','LTU','LUX',
+  'MCO','NLD','NOR','POL','PRT','ROU','SMR','SVK','SVN','ESP',
+  'SWE','CHE','TUR','GBR'
+];
 const MACRO_AREAS = [
-  { key:'EMEA',     label:'EMEA',     isos:['AUT','BEL','BGR','CHE','CZE','DEU','DNK','ESP','FIN','FRA','GBR','GRC','HRV','HUN','IRL','ITA','LUX','NLD','NOR','POL','PRT','ROU','SVK','SVN','SWE','TUR'] },
-  { key:'AMERICAS', label:'Americas', isos:['ARG','BLZ','BOL','BRA','CAN','CHL','COL','CRI','ECU','GTM','GUY','HND','MEX','NIC','PAN','PER','PRY','SLV','SUR','URY','USA','VEN'] },
-  { key:'APAC',     label:'APAC',     isos:['AUS','CHN','IND','JPN','KOR','NZL','TWN'] }
+  { key:'EMEA', label:'EMEA', isos:[...WESTERN_EU, ...EASTERN_EU],
+    subGroups: [
+      { key:'Western Europe', isos: WESTERN_EU },
+      { key:'Eastern Europe', isos: EASTERN_EU }
+    ]
+  },
+  { key:'AMERICAS', label:'Americas', isos:[
+    'ARG','BLZ','BOL','BRA','CAN','CHL','COL','CRI','ECU','GTM','GUY','HND','MEX',
+    'NIC','PAN','PER','PRY','SLV','SUR','URY','USA','VEN'
+  ]},
+  { key:'APAC', label:'APAC', isos:['AUS','CHN','IND','JPN','KOR','NZL','TWN'] }
 ];
 
 function getIsoMacro(iso) {
@@ -556,13 +589,14 @@ function updateSubtitle() {
   pillsEl.innerHTML = '';
 
   // Group active countries by macro area
-  const macroMap = {}; // key -> [names]
+  const macroMap = {}; // key -> { label, countries: [names], countryObjs: [{iso,name}] }
   const standalone = []; // countries not in any macro area
   active.forEach(function(c) {
     const ma = getIsoMacro(c.iso);
     if (ma) {
-      if (!macroMap[ma.key]) macroMap[ma.key] = { label: ma.label, countries: [] };
+      if (!macroMap[ma.key]) macroMap[ma.key] = { label: ma.label, countries: [], countryObjs: [] };
       macroMap[ma.key].countries.push(c.name);
+      macroMap[ma.key].countryObjs.push({ iso: c.iso, name: c.name });
     } else {
       standalone.push(c.name);
     }
@@ -596,14 +630,47 @@ function updateSubtitle() {
 
     const countriesDiv = document.createElement('div');
     countriesDiv.className = 'macro-countries';
-    macroMap[ma.key].countries.sort().forEach(function(name) {
-      const chip = document.createElement('span');
-      chip.className = 'country-chip';
-      chip.style.background = col;
-      chip.style.borderColor = col;
-      chip.textContent = name;
-      countriesDiv.appendChild(chip);
-    });
+    countriesDiv.style.flexDirection = 'column';
+    countriesDiv.style.gap = '6px';
+
+    if (ma.subGroups) {
+      // Render with sub-groups
+      ma.subGroups.forEach(function(sg) {
+        // Filter active countries in this sub-group
+        const sgActive = macroMap[ma.key].countryObjs
+          .filter(function(co) { return sg.isos.indexOf(co.iso) !== -1; })
+          .map(function(co) { return co.name; })
+          .sort();
+        if (!sgActive.length) return;
+        // Sub-group label
+        const sgLabel = document.createElement('div');
+        sgLabel.style.cssText = 'font-size:10px;color:rgba(255,255,255,0.75);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding-left:2px;';
+        sgLabel.textContent = sg.key;
+        countriesDiv.appendChild(sgLabel);
+        // Chips row
+        const chipsRow = document.createElement('div');
+        chipsRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;';
+        sgActive.forEach(function(name) {
+          const chip = document.createElement('span');
+          chip.className = 'country-chip';
+          chip.style.background = col;
+          chip.style.borderColor = col;
+          chip.textContent = name;
+          chipsRow.appendChild(chip);
+        });
+        countriesDiv.appendChild(chipsRow);
+      });
+    } else {
+      // Flat list
+      macroMap[ma.key].countries.sort().forEach(function(name) {
+        const chip = document.createElement('span');
+        chip.className = 'country-chip';
+        chip.style.background = col;
+        chip.style.borderColor = col;
+        chip.textContent = name;
+        countriesDiv.appendChild(chip);
+      });
+    }
 
     pill.addEventListener('click', function() {
       const isExp = pill.classList.toggle('expanded');
@@ -758,20 +825,30 @@ const ISO_MAP = {
   '840':'USA','124':'CAN','484':'MEX','032':'ARG','076':'BRA',
   '152':'CHL','170':'COL','604':'PER','068':'BOL','218':'ECU',
   '328':'GUY','600':'PRY','740':'SUR','858':'URY','862':'VEN',
-  '276':'DEU','380':'ITA','250':'FRA','724':'ESP','826':'GBR',
-  '442':'LUX','528':'NLD','056':'BEL','040':'AUT','756':'CHE',
-  '616':'POL','203':'CZE','348':'HUN','642':'ROU','100':'BGR',
-  '191':'HRV','705':'SVN','703':'SVK','372':'IRL','208':'DNK',
-  '752':'SWE','246':'FIN','578':'NOR','620':'PRT','300':'GRC',
-  '792':'TUR','804':'UKR','643':'RUS','356':'IND','156':'CHN',
-  '158':'TWN','392':'JPN','410':'KOR','036':'AUS','554':'NZL',
+  // Europe — full EMEA list
+  '008':'ALB','020':'AND','040':'AUT','112':'BLR','056':'BEL',
+  '070':'BIH','100':'BGR','191':'HRV','196':'CYP','203':'CZE',
+  '208':'DNK','233':'EST','246':'FIN','250':'FRA','276':'DEU',
+  '300':'GRC','348':'HUN','352':'ISL','372':'IRL','380':'ITA',
+  '428':'LVA','438':'LIE','440':'LTU','442':'LUX','470':'MLT',
+  '498':'MDA','492':'MCO','499':'MNE','528':'NLD','807':'MKD',
+  '578':'NOR','616':'POL','620':'PRT','642':'ROU',
+  '674':'SMR','688':'SRB','703':'SVK','705':'SVN','724':'ESP',
+  '752':'SWE','756':'CHE','792':'TUR','804':'UKR','826':'GBR',
+  // APAC
+  '356':'IND','156':'CHN','158':'TWN','392':'JPN','410':'KOR',
+  '036':'AUS','554':'NZL',
+  // Africa / ME
   '710':'ZAF','818':'EGY','012':'DZA','504':'MAR','566':'NGA','404':'KEN',
   '682':'SAU','784':'ARE','634':'QAT','414':'KWT','512':'OMN',
   '048':'BHR','887':'YEM','376':'ISR','400':'JOR','422':'LBN',
   '760':'SYR','275':'PSE','368':'IRQ','364':'IRN',
+  // Other APAC
   '586':'PAK','050':'BGD','360':'IDN','764':'THA','704':'VNM',
+  '458':'MYS','608':'PHL','702':'SGP',
+  // Latam extra
   '320':'GTM','084':'BLZ','222':'SLV','340':'HND','558':'NIC',
-  '188':'CRI','591':'PAN','458':'MYS','608':'PHL','702':'SGP'
+  '188':'CRI','591':'PAN'
 };
 
 // ─── MAP RENDER ───────────────────────────────────────────────────────────────
@@ -816,12 +893,16 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
 
   // Macro-area → ISO list
   const MACRO = {
-    'EMEA': ['AUT','BEL','BGR','CHE','CZE','DEU','DNK','ESP','FIN','FRA',
-              'GBR','GRC','HRV','HUN','IRL','ITA','LUX','NLD','NOR','POL',
-              'PRT','ROU','SVK','SVN','SWE','TUR'],
-    'AMERICAS': ['ARG','BLZ','BOL','BRA','CAN','CHL','COL','CRI','ECU',
-                 'GTM','GUY','HND','MEX','NIC','PAN','PER','PRY','SLV',
-                 'SUR','URY','USA','VEN'],
+    'EMEA': [
+      'AND','AUT','BEL','BGR','HRV','CZE','DNK','EST','FIN','FRA',
+      'DEU','GRC','HUN','ISL','IRL','ITA','LVA','LIE','LTU','LUX',
+      'MCO','NLD','NOR','POL','PRT','ROU','SMR','SVK','SVN','ESP',
+      'SWE','CHE','TUR','GBR',      'UKR','BLR','MDA','ALB','BIH','SRB','MNE','MKD','XKX'
+    ],
+    'AMERICAS': [
+      'ARG','BLZ','BOL','BRA','CAN','CHL','COL','CRI','ECU','GTM','GUY','HND','MEX',
+      'NIC','PAN','PER','PRY','SLV','SUR','URY','USA','VEN'
+    ],
     'APAC': ['AUS','CHN','IND','JPN','KOR','NZL','TWN']
   };
 
