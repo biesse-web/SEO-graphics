@@ -113,6 +113,68 @@ svg#world-map { width: 100%; height: auto; display: block; }
 .legend-item { display: flex; align-items: center; gap: 5px; }
 .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
 
+/* ── Version Bar ─────────────────────────────────────────────────────────────── */
+.version-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px;
+  background: #fff; border: 1px solid #e8e7e3; border-radius: 10px;
+  padding: 10px 16px; margin-bottom: 1.25rem; font-size: 12px;
+}
+.version-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.version-badge {
+  font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px;
+  color: #fff; letter-spacing: 0.03em;
+}
+.version-badge.major { background: #1a1a18; }
+.version-badge.minor { background: #888; }
+.version-date { color: #888; }
+.version-desc { color: #555; font-weight: 500; }
+.version-history-btn {
+  font-size: 11px; padding: 3px 10px; border-radius: 999px;
+  border: 1px solid #ccc; background: #fff; cursor: pointer; color: #666;
+  transition: all 0.15s; white-space: nowrap;
+}
+.version-history-btn:hover { background: #f0efeb; }
+.version-dl-btn {
+  font-size: 11px; padding: 3px 12px; border-radius: 999px;
+  border: 1px solid #1a1a18; background: #1a1a18;
+  cursor: pointer; color: #fff; transition: all 0.15s; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.version-dl-btn:hover { background: #333; border-color: #333; }
+
+/* ── Version History Modal ────────────────────────────────────────────────────── */
+.vhistory-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.35); z-index: 2000;
+  align-items: center; justify-content: center;
+}
+.vhistory-overlay.open { display: flex; }
+.vhistory-modal {
+  background: #fff; border-radius: 14px; padding: 24px 28px;
+  max-width: 520px; width: 90%; max-height: 80vh; overflow-y: auto;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+}
+.vhistory-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+.vhistory-title { font-size: 15px; font-weight: 600; }
+.vhistory-close {
+  background: none; border: none; font-size: 20px; cursor: pointer;
+  color: #aaa; line-height: 1; padding: 0 4px;
+}
+.vhistory-close:hover { color: #1a1a18; }
+.vhistory-list { display: flex; flex-direction: column; gap: 12px; }
+.vhistory-item {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding-bottom: 12px; border-bottom: 1px solid #f0efeb;
+}
+.vhistory-item:last-child { border-bottom: none; padding-bottom: 0; }
+.vhistory-meta { display: flex; flex-direction: column; gap: 3px; min-width: 90px; }
+.vhistory-desc { font-size: 12px; color: #555; line-height: 1.5; }
+.vhistory-current { font-size: 10px; color: #aaa; font-style: italic; margin-top: 2px; }
+
 /* ── Country Explorer ───────────────────────────────────────────────────────── */
 .explorer-wrap {
   margin-top: 2rem; border-top: 1.5px solid #e8e7e3; padding-top: 1.5rem;
@@ -187,6 +249,30 @@ svg#world-map { width: 100%; height: auto; display: block; }
 
 </div>
 
+<!-- ── Version Bar ────────────────────────────────────────────────────────── -->
+<div class="version-bar" id="version-bar">
+  <div class="version-left">
+    <span class="version-badge" id="v-badge">v1.0</span>
+    <span class="version-date" id="v-date"></span>
+    <span class="version-desc" id="v-desc"></span>
+  </div>
+  <div style="display:flex;gap:6px;align-items:center;">
+    <button class="version-history-btn" id="v-history-btn">Version history ↗</button>
+    <button class="version-dl-btn" id="v-export-btn">⬇ Export PDF</button>
+  </div>
+</div>
+
+<!-- ── Version History Modal ───────────────────────────────────────────────── -->
+<div class="vhistory-overlay" id="vhistory-overlay">
+  <div class="vhistory-modal">
+    <div class="vhistory-header">
+      <span class="vhistory-title">Version History</span>
+      <button class="vhistory-close" id="vhistory-close">×</button>
+    </div>
+    <div class="vhistory-list" id="vhistory-list"></div>
+  </div>
+</div>
+
 <!-- ── Country Explorer Panel ─────────────────────────────────────────────── -->
 <div class="explorer-wrap">
   <h2 class="explorer-title">Country Focus</h2>
@@ -209,7 +295,7 @@ svg#world-map { width: 100%; height: auto; display: block; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <script>
-// ─── SECTOR → MATERIALS ───────────────────────────────────────────────────────
+// --- SECTOR -> MATERIALS -------------------------------------------------------
 const SECTOR_MATERIALS = {
   'Aerospace':  ['Wood', 'Glass', 'Materia', 'Metal'],
   'Marine':     ['Wood', 'Glass', 'Stone', 'Materia', 'Metal'],
@@ -226,7 +312,7 @@ const SECTOR_COLOR = {
   'Robotics':   '#16A34A'
 };
 
-// ─── MATERIALS ────────────────────────────────────────────────────────────────
+// --- MATERIALS ----------------------------------------------------------------
 const MATERIALS = {
   'Wood':          { color:'#EF9F27', solidColor:'#EF9F27', dotBg:'#EF9F27', dotPattern:false },
   'Glass':         { color:'#378ADD', solidColor:'#378ADD', dotBg:'#378ADD', dotPattern:false },
@@ -237,7 +323,7 @@ const MATERIALS = {
   'Certification': { color:'#D97706', solidColor:'#D97706', dotBg:'#D97706', dotPattern:false }
 };
 
-// ─── PRODUCT TREE ─────────────────────────────────────────────────────────────
+// --- PRODUCT TREE -------------------------------------------------------------
 const PRODUCT_TREE = {
   'Wood': {
     'MT line':  ['1120','1090','1073','1055'],
@@ -285,7 +371,7 @@ const PRODUCT_TREE = {
   'Certification': {}
 };
 
-// ─── REGION LABELS ────────────────────────────────────────────────────────────
+// --- REGION LABELS ------------------------------------------------------------
 const REGION_LABEL = {
   'SAU':{ label:'Middle East', region:'ME' }, 'ARE':{ label:'Middle East', region:'ME' },
   'QAT':{ label:'Middle East', region:'ME' }, 'KWT':{ label:'Middle East', region:'ME' },
@@ -308,7 +394,7 @@ const REGION_LABEL = {
   'NZL':{ label:'Australia & NZ', region:'AUSNZ' }
 };
 
-// ─── DATA HELPERS ─────────────────────────────────────────────────────────────
+// --- DATA HELPERS -------------------------------------------------------------
 function emptyFamilies(mat) {
   const out = {};
   const tree = PRODUCT_TREE[mat] || {};
@@ -358,7 +444,7 @@ function setSectorOnly(country, sector, val) {
   c._all = val;
 }
 
-// ─── COUNTRIES ────────────────────────────────────────────────────────────────
+// --- COUNTRIES ----------------------------------------------------------------
 // Europe (EMEA)
 const EUR_ISOS = [
   'AND','AUT','BEL','BGR','HRV','CZE','DNK','EST','FIN','FRA',
@@ -417,16 +503,16 @@ ALL_ISOS.forEach(function(iso) {
   COUNTRIES[iso] = emptyCountry(COUNTRY_NAMES[iso] || iso);
 });
 
-// ── EMEA: populate data ───────────────────────────────────────────────────────
-// HS-672 → Sector: all relevant (Materia/HS line/HS672 + Metal/HS line/HS672)
-// ESiMill → Metal / ESiMill / ESiMill200 — sectors where Metal exists
-// HST-810 → Aerospace+Automotive / Materia+Metal / HST line / HST810
-// HST-610 → Aerospace+Automotive / Materia+Metal / HST line / HST610
+// -- EMEA: populate data -------------------------------------------------------
+// HS-672 -> Sector: all relevant (Materia/HS line/HS672 + Metal/HS line/HS672)
+// ESiMill -> Metal / ESiMill / ESiMill200 — sectors where Metal exists
+// HST-810 -> Aerospace+Automotive / Materia+Metal / HST line / HST810
+// HST-610 -> Aerospace+Automotive / Materia+Metal / HST line / HST610
 
 EUR_ISOS.forEach(function(iso) {
   const c = COUNTRIES[iso];
   // HS672 — Materia, sectors that include Materia: Aerospace, Marine, Furniture, Robotics (not Automotive which has no HS line for Materia... but Materia is in Automotive)
-  // Materia has HS line → set for all sectors that include Materia
+  // Materia has HS line -> set for all sectors that include Materia
   ['Aerospace','Marine','Furniture','Robotics'].forEach(function(s) {
     setProduct(c, s, 'Materia', 'HS line', 'HS672');
   });
@@ -435,23 +521,23 @@ EUR_ISOS.forEach(function(iso) {
     setProduct(c, s, 'Metal', 'HS line', 'HS672');
   });
 
-  // ESiMill200 → Metal / ESiMill → sectors with Metal: Aerospace, Marine, Automotive, Furniture
+  // ESiMill200 -> Metal / ESiMill -> sectors with Metal: Aerospace, Marine, Automotive, Furniture
   ['Aerospace','Marine','Automotive','Furniture'].forEach(function(s) {
     setProduct(c, s, 'Metal', 'ESiMill', 'ESiMill200');
   });
 
-  // HST810 → Aerospace / Materia + Metal / HST line
+  // HST810 -> Aerospace / Materia + Metal / HST line
   setProduct(c, 'Aerospace', 'Materia', 'HST line', 'HST810');
   setProduct(c, 'Aerospace', 'Metal',   'HST line', 'HST810');
 
-  // HST610 → Aerospace + Automotive / Materia + Metal / HST line
+  // HST610 -> Aerospace + Automotive / Materia + Metal / HST line
   setProduct(c, 'Aerospace',  'Materia', 'HST line', 'HST610');
   setProduct(c, 'Aerospace',  'Metal',   'HST line', 'HST610');
   setProduct(c, 'Automotive', 'Materia', 'HST line', 'HST610');
   setProduct(c, 'Automotive', 'Metal',   'HST line', 'HST610');
 });
 
-// ── USA + CANADA ──────────────────────────────────────────────────────────────
+// -- USA + CANADA --------------------------------------------------------------
 ['USA','CAN'].forEach(function(iso) {
   const c = COUNTRIES[iso];
   // HS672 (same as EMEA)
@@ -478,7 +564,7 @@ EUR_ISOS.forEach(function(iso) {
   // (Customer Care and Certification are not in SECTOR_MATERIALS so handled via setSectorOnly above)
 });
 
-// ── CHINA — same as EMEA ─────────────────────────────────────────────────────
+// -- CHINA — same as EMEA -----------------------------------------------------
 (function() {
   const c = COUNTRIES['CHN'];
   ['Aerospace','Marine','Furniture','Robotics'].forEach(function(s) {
@@ -497,18 +583,18 @@ EUR_ISOS.forEach(function(iso) {
   setProduct(c, 'Automotive', 'Metal',   'HST line', 'HST610');
 })();
 
-// ── TAIWAN ───────────────────────────────────────────────────────────────────
+// -- TAIWAN -------------------------------------------------------------------
 // ESiMill200, HST810, ES5 line
 (function() {
   const c = COUNTRIES['TWN'];
-  // ESiMill200 → Metal
+  // ESiMill200 -> Metal
   ['Aerospace','Marine','Automotive','Furniture'].forEach(function(s) {
     setProduct(c, s, 'Metal', 'ESiMill', 'ESiMill200');
   });
-  // HST810 → Aerospace / Materia + Metal
+  // HST810 -> Aerospace / Materia + Metal
   setProduct(c, 'Aerospace', 'Materia', 'HST line', 'HST810');
   setProduct(c, 'Aerospace', 'Metal',   'HST line', 'HST810');
-  // ES5 line (Serie 5) → Materia + Metal
+  // ES5 line (Serie 5) -> Materia + Metal
   ['ES505','ES510','ES511'].forEach(function(p) {
     ['Aerospace','Marine','Automotive','Furniture'].forEach(function(s) {
       setProduct(c, s, 'Metal',   'ES5 line', p);
@@ -519,7 +605,7 @@ EUR_ISOS.forEach(function(iso) {
   });
 })();
 
-// ── JAPAN — sector level only (Automotive + Aerospace) ───────────────────────
+// -- JAPAN — sector level only (Automotive + Aerospace) -----------------------
 (function() {
   const c = COUNTRIES['JPN'];
   setSectorOnly(c, 'Automotive', true);
@@ -528,13 +614,13 @@ EUR_ISOS.forEach(function(iso) {
 
 // Korea — no data (stays empty)
 
-// ─── STATE ───────────────────────────────────────────────────────────────────
+// --- STATE -------------------------------------------------------------------
 let curSector   = null;
 let curMaterial = null;
 let curFamily   = null;
 let curProduct  = null;
 
-// ─── ACTIVE CHECK ─────────────────────────────────────────────────────────────
+// --- ACTIVE CHECK -------------------------------------------------------------
 function isCountryActive(iso3) {
   const c = COUNTRIES[iso3];
   if (!c || !curSector) return false;
@@ -574,7 +660,7 @@ function getBreadcrumb() {
   return parts.join(' › ');
 }
 
-// ─── UI ───────────────────────────────────────────────────────────────────────
+// --- UI -----------------------------------------------------------------------
 const subtitleEl  = document.getElementById('subtitle');
 const pillsEl     = document.getElementById('macro-pills');
 const tooltipEl   = document.getElementById('tooltip');
@@ -743,7 +829,7 @@ function updateMap() {
 
 function refreshAll() { updateSubtitle(); updateLegend(); updateMap(); }
 
-// ─── SECTOR BUTTONS ───────────────────────────────────────────────────────────
+// --- SECTOR BUTTONS -----------------------------------------------------------
 const sectorRow = document.getElementById('sector-row');
 function updateSectorBtns() {
   sectorRow.querySelectorAll('.tab-btn').forEach(function(b) {
@@ -766,7 +852,7 @@ SECTORS.forEach(function(s) {
   sectorRow.appendChild(btn);
 });
 
-// ─── MATERIAL BUTTONS ─────────────────────────────────────────────────────────
+// --- MATERIAL BUTTONS ---------------------------------------------------------
 function buildMaterialRow() {
   materialRow.querySelectorAll('.mat-btn').forEach(function(b) { b.remove(); });
   if (!curSector) { materialRow.classList.add('hidden'); return; }
@@ -785,6 +871,17 @@ function buildMaterialRow() {
       curFamily = null; curProduct = null;
       updateMaterialBtns(); buildFamilyRow(); buildProductRow(); refreshAll();
     });
+    // Hint border: has data for current sector?
+    if (curSector) {
+      const hasData = Object.values(COUNTRIES).some(function(c) {
+        const sd = c.active[curSector];
+        return sd && sd.materials[m] && sd.materials[m]._all;
+      });
+      if (hasData) {
+        btn.style.borderColor = SECTOR_COLOR[curSector];
+        btn.style.boxShadow = 'inset 0 0 0 1px ' + SECTOR_COLOR[curSector];
+      }
+    }
     materialRow.appendChild(btn);
   });
   updateMaterialBtns();
@@ -793,13 +890,20 @@ function updateMaterialBtns() {
   materialRow.querySelectorAll('.mat-btn').forEach(function(b) {
     const m = b.dataset.val; const on = m === curMaterial; const mc = MATERIALS[m];
     b.classList.toggle('active', on);
-    b.style.background  = on ? mc.solidColor || '#888' : '';
-    b.style.borderColor = on ? mc.solidColor || '#888' : '';
-    b.style.color       = on ? '#fff' : '';
+    if (on) {
+      b.style.background  = mc.solidColor || '#888';
+      b.style.borderColor = mc.solidColor || '#888';
+      b.style.color       = '#fff';
+      b.style.boxShadow   = '';
+    } else {
+      b.style.background  = '';
+      b.style.color       = '';
+      // Keep hint border if present (set by buildMaterialRow)
+    }
   });
 }
 
-// ─── FAMILY BUTTONS ───────────────────────────────────────────────────────────
+// --- FAMILY BUTTONS -----------------------------------------------------------
 function buildFamilyRow() {
   familyRow.querySelectorAll('.fam-btn').forEach(function(b) { b.remove(); });
   if (!curMaterial) { familyRow.classList.add('hidden'); divFamily.style.display = 'none'; return; }
@@ -813,6 +917,22 @@ function buildFamilyRow() {
       curFamily = (curFamily === fam) ? null : fam; curProduct = null;
       updateFamilyBtns(); buildProductRow(); refreshAll();
     });
+    // Hint border: has data for current sector+material?
+    if (curSector && curMaterial) {
+      const col = MATERIALS[curMaterial] ? MATERIALS[curMaterial].solidColor : null;
+      const hasData = Object.values(COUNTRIES).some(function(c) {
+        const sd = c.active[curSector];
+        if (!sd) return false;
+        const md = sd.materials[curMaterial];
+        if (!md) return false;
+        const fd = md.families[fam];
+        return fd && fd._all;
+      });
+      if (hasData && col) {
+        btn.style.borderColor = col;
+        btn.style.boxShadow = 'inset 0 0 0 1px ' + col;
+      }
+    }
     familyRow.appendChild(btn);
   });
   updateFamilyBtns();
@@ -826,7 +946,7 @@ function updateFamilyBtns() {
   });
 }
 
-// ─── PRODUCT BUTTONS ──────────────────────────────────────────────────────────
+// --- PRODUCT BUTTONS ----------------------------------------------------------
 function buildProductRow() {
   productRow.querySelectorAll('.prod-btn').forEach(function(b) { b.remove(); });
   if (!curFamily || !curMaterial) { productRow.classList.add('hidden'); divProduct.style.display = 'none'; return; }
@@ -839,6 +959,22 @@ function buildProductRow() {
     btn.addEventListener('click', function() {
       curProduct = (curProduct === p) ? null : p; updateProductBtns(); refreshAll();
     });
+    // Hint border: has data for current sector+material+family?
+    if (curSector && curMaterial && curFamily) {
+      const col = MATERIALS[curMaterial] ? MATERIALS[curMaterial].solidColor : null;
+      const hasData = Object.values(COUNTRIES).some(function(c) {
+        const sd = c.active[curSector];
+        if (!sd) return false;
+        const md = sd.materials[curMaterial];
+        if (!md) return false;
+        const fd = md.families[curFamily];
+        return fd && fd.products[p] === true;
+      });
+      if (hasData && col) {
+        btn.style.borderColor = col;
+        btn.style.boxShadow = 'inset 0 0 0 1px ' + col;
+      }
+    }
     productRow.appendChild(btn);
   });
   updateProductBtns();
@@ -852,7 +988,7 @@ function updateProductBtns() {
   });
 }
 
-// ─── ISO MAP ─────────────────────────────────────────────────────────────────
+// --- ISO MAP -----------------------------------------------------------------
 const ISO_MAP = {
   '840':'USA','124':'CAN','484':'MEX','032':'ARG','076':'BRA',
   '152':'CHL','170':'COL','604':'PER','068':'BOL','218':'ECU',
@@ -883,7 +1019,7 @@ const ISO_MAP = {
   '188':'CRI','591':'PAN'
 };
 
-// ─── MAP RENDER ───────────────────────────────────────────────────────────────
+// --- MAP RENDER ---------------------------------------------------------------
 const svg  = d3.select('#world-map');
 const proj = d3.geoNaturalEarth1().scale(170).translate([500, 280]);
 const path = d3.geoPath().projection(proj);
@@ -908,7 +1044,7 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
         const iso3 = this.dataset.iso3;
         if (!isCountryActive(iso3)) return;
 
-        // ── Show popup ───────────────────────────────────────────────────────
+        // -- Show popup -------------------------------------------------------
         const popup = document.getElementById('map-popup');
         const popupName = document.getElementById('popup-name');
         const popupBody = document.getElementById('popup-body');
@@ -995,7 +1131,7 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
     refreshAll();
   });
 
-// ── COUNTRY EXPLORER ──────────────────────────────────────────────────────────
+// -- COUNTRY EXPLORER ----------------------------------------------------------
 var renderCountry; // exposed for map click
 (function() {
   const regionSelect = document.getElementById('explorer-region');
@@ -1003,7 +1139,7 @@ var renderCountry; // exposed for map click
   const output       = document.getElementById('explorer-output');
   const clearBtn     = document.getElementById('explorer-clear');
 
-  // Macro-area → ISO list
+  // Macro-area -> ISO list
   const MACRO = {
     'EMEA': [
       'AND','AUT','BEL','BGR','HRV','CZE','DNK','EST','FIN','FRA',
@@ -1289,6 +1425,323 @@ var renderCountry; // exposed for map click
     d3.selectAll('.country').classed('selected', false);
   });
 })();
+
+
+// -- VERSIONING ----------------------------------------------------------------
+const VERSIONS = [
+  {
+    version: '1.0',
+    type: 'major',
+    date: '2026-06-22',
+    description: 'First release — EMEA, Americas, APAC. Feedback from commercial recap doc.'
+  }
+  // Future versions will be added here by Claude when instructed
+];
+
+(function() {
+  const current = VERSIONS[VERSIONS.length - 1];
+
+  // Render version bar
+  const badge = document.getElementById('v-badge');
+  const vDate = document.getElementById('v-date');
+  const vDesc = document.getElementById('v-desc');
+  badge.textContent = 'v' + current.version;
+  badge.className = 'version-badge ' + current.type;
+  vDate.textContent = new Date(current.date).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+  vDesc.textContent = current.description;
+
+  // Render history modal
+  const list = document.getElementById('vhistory-list');
+  function renderHistory() {
+    list.innerHTML = '';
+    [...VERSIONS].reverse().forEach(function(v, i) {
+      const item = document.createElement('div');
+      item.className = 'vhistory-item';
+      const meta = document.createElement('div');
+      meta.className = 'vhistory-meta';
+      const b = document.createElement('span');
+      b.className = 'version-badge ' + v.type;
+      b.textContent = 'v' + v.version;
+      b.style.display = 'inline-block'; b.style.marginBottom = '4px';
+      const d = document.createElement('span');
+      d.className = 'version-date';
+      d.textContent = new Date(v.date).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+      meta.appendChild(b); meta.appendChild(d);
+      if (i === 0) {
+        const cur = document.createElement('span');
+        cur.className = 'vhistory-current';
+        cur.textContent = 'current';
+        meta.appendChild(cur);
+      }
+      const desc = document.createElement('div');
+      desc.className = 'vhistory-desc';
+      desc.textContent = v.description;
+      item.appendChild(meta); item.appendChild(desc);
+      list.appendChild(item);
+    });
+  }
+  renderHistory();
+
+  // Open/close modal
+  document.getElementById('v-history-btn').addEventListener('click', function() {
+    document.getElementById('vhistory-overlay').classList.add('open');
+  });
+  document.getElementById('vhistory-close').addEventListener('click', function() {
+    document.getElementById('vhistory-overlay').classList.remove('open');
+  });
+  document.getElementById('vhistory-overlay').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+})();
+
+
+// -- PDF EXPORT (jsPDF + autoTable) -------------------------------------------
+function loadScript(src, cb) {
+  var s = document.createElement('script');
+  s.src = src; s.onload = cb; document.head.appendChild(s);
+}
+
+document.getElementById('v-export-btn').addEventListener('click', function() {
+  var btn = this;
+  btn.textContent = 'Generating...';
+  btn.disabled = true;
+
+  function doExport() {
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    var W = 297, H = 210, LM = 10, RM = 10, TM = 10;
+    var UW = W - LM - RM;
+    var cur = VERSIONS[VERSIONS.length - 1];
+
+    // -- Header --------------------------------------------------------------
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(14);
+    doc.setTextColor(26,26,24);
+    doc.text('HSD — SEO GEO Heatmap', LM, TM + 6);
+
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7);
+    doc.setTextColor(136,135,128);
+    var vtext = 'Commercial Feedback Report  ·  v' + cur.version + '  ·  ' +
+      new Date(cur.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) +
+      '  ·  Valid until December 2026';
+    doc.text(vtext, W - RM, TM + 6, { align: 'right' });
+
+    // line
+    doc.setDrawColor(26,26,24);
+    doc.setLineWidth(0.5);
+    doc.line(LM, TM + 9, W - RM, TM + 9);
+
+    // -- KPI cards ------------------------------------------------------------
+    var kpis = [['49','Active countries'],['5','Sectors covered'],['3','Prod. families'],['13','Specific products']];
+    var kw = UW / 4;
+    kpis.forEach(function(k, i) {
+      var x = LM + i * kw;
+      doc.setFillColor(245,244,240);
+      doc.rect(x + 0.5, TM + 11, kw - 1, 12, 'F');
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(13);
+      doc.setTextColor(26,26,24);
+      doc.text(k[0], x + kw/2, TM + 19, { align: 'center' });
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(5.5);
+      doc.setTextColor(136,135,128);
+      doc.text(k[1], x + kw/2, TM + 23, { align: 'center' });
+    });
+
+    // -- Section label ---------------------------------------------------------
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(8);
+    doc.setTextColor(26,26,24);
+    doc.text('Commercial feedback by region', LM, TM + 31);
+
+    // -- Table data ------------------------------------------------------------
+    var REGIONS_DATA = [
+      {
+        label:'EMEA', sub:'44 countries — Europe', bg:[238,237,254],
+        standard:[
+          ['Aerospace','Materia','HS line + HST line','HS672 · HST610 · HST810'],
+          ['Aerospace','Metal','HS line + HST line + ESiMill','HS672 · HST610 · HST810 · ESiMill200'],
+          ['Automotive','Materia','HST line','HST610'],
+          ['Automotive','Metal','HST line + ESiMill','HST610 · ESiMill200'],
+          ['Marine','Materia','HS line','HS672'],
+          ['Marine','Metal','HS line + ESiMill','HS672 · ESiMill200'],
+          ['Furniture','Materia','HS line','HS672'],
+          ['Furniture','Metal','HS line + ESiMill','HS672 · ESiMill200'],
+          ['Robotics','Materia','HS line','HS672'],
+        ], exceptions:[]
+      },
+      {
+        label:'Americas', sub:'USA + Canada', bg:[250,238,218],
+        standard:[
+          ['Aerospace','Materia','HS line + HST line','HS672 · HST610 · HST810 · HST910'],
+          ['Aerospace','Metal','HS line + HST line','HS672 · HST610 · HST810 · HST910'],
+          ['Automotive','Materia','HST line','HST610'],
+          ['Automotive','Metal','HST line','HST610'],
+        ], exceptions:[]
+      },
+      {
+        label:'APAC', sub:'China (standard)', bg:[230,241,251],
+        standard:[
+          ['Aerospace','Materia','HS line + HST line','HS672 · HST610 · HST810'],
+          ['Aerospace','Metal','HS line + HST line + ESiMill','HS672 · HST610 · HST810 · ESiMill200'],
+          ['Automotive','Materia','HST line','HST610'],
+          ['Automotive','Metal','HST line + ESiMill','HST610 · ESiMill200'],
+        ],
+        exceptions:[
+          {country:'Taiwan', note:'exception', rows:[
+            ['Aerospace','Metal','ESiMill + HST line + ES5 line','ESiMill200 · HST810 · ES505 · ES510 · ES511'],
+            ['Aerospace','Materia','HST line + ES5 line','HST810 · ES505 · ES510 · ES511'],
+          ]},
+          {country:'Japan', note:'brand awareness only', rows:[
+            ['Aerospace','—','—','Brand awareness'],
+            ['Automotive','—','—','Brand awareness'],
+          ]},
+        ]
+      }
+    ];
+
+    var SEC_COLOR = {'Aerospace':[46,111,217],'Marine':[15,168,168],'Automotive':[224,92,42],'Furniture':[139,92,246],'Robotics':[22,163,74]};
+    var MAT_COLOR = {'Materia':[127,119,221],'Metal':[95,94,90],'Wood':[239,159,39],'Glass':[55,138,221],'Stone':[226,75,74]};
+
+    var body = [];
+    var styles_map = {};
+    var row_i = 0;
+
+    REGIONS_DATA.forEach(function(region) {
+      region.standard.forEach(function(r, i) {
+        var area = i === 0 ? region.label + '\n' + region.sub : '';
+        body.push([area, r[0], r[1], r[2], r[3]]);
+        styles_map[row_i] = { type: 'standard', bg: region.bg, isFirst: i === 0, sector: r[0], material: r[1] };
+        row_i++;
+      });
+      region.exceptions.forEach(function(exc) {
+        exc.rows.forEach(function(r, j) {
+          var area = j === 0 ? exc.country + ' (' + exc.note + ')' : '';
+          body.push([area, r[0], r[1], r[2], r[3]]);
+          styles_map[row_i] = { type: 'exception', sector: r[0], material: r[1] };
+          row_i++;
+        });
+      });
+      // spacer
+      body.push(['','','','','']);
+      styles_map[row_i] = { type: 'spacer' };
+      row_i++;
+    });
+
+    doc.autoTable({
+      head: [['Area / Country','Sector','Material','Product Family','Specific Products']],
+      body: body,
+      startY: TM + 33,
+      margin: { left: LM, right: 81 },
+      tableWidth: UW - 72,
+      styles: { fontSize: 6, cellPadding: 2, valign: 'middle', overflow: 'linebreak' },
+      headStyles: { fillColor: [245,244,240], textColor: [136,135,128], fontStyle: 'bold', fontSize: 6 },
+      tableWidth: 'wrap',
+      columnStyles: {
+        0: { cellWidth: 22, fontStyle: 'bold' },
+        1: { cellWidth: 20 },
+        2: { cellWidth: 17 },
+        3: { cellWidth: 42, textColor: [136,135,128] },
+        4: { cellWidth: 49, fontStyle: 'bold' },
+      },
+      didParseCell: function(data) {
+        if (data.section !== 'body') return;
+        var ri = data.row.index;
+        var info = styles_map[ri];
+        if (!info) return;
+        if (info.type === 'spacer') {
+          data.cell.styles.fillColor = [255,255,255];
+          data.cell.styles.minCellHeight = 2;
+          return;
+        }
+        if (info.type === 'exception') {
+          data.cell.styles.fillColor = [255,240,235];
+          if (data.column.index === 0) data.cell.styles.textColor = [224,92,42];
+        } else {
+          data.cell.styles.fillColor = [255,255,255];
+          if (data.column.index === 0 && info.isFirst) {
+            data.cell.styles.fillColor = info.bg;
+          }
+        }
+        if (data.column.index === 1 && info.sector && SEC_COLOR[info.sector]) {
+          data.cell.styles.textColor = SEC_COLOR[info.sector];
+        }
+        if (data.column.index === 2 && info.material && MAT_COLOR[info.material]) {
+          data.cell.styles.textColor = MAT_COLOR[info.material];
+        }
+      },
+      didDrawCell: function(data) {
+        if (data.section !== 'body') return;
+        var ri = data.row.index;
+        var info = styles_map[ri];
+        if (info && info.type === 'exception' && data.column.index === 0) {
+          doc.setDrawColor(224,92,42);
+          doc.setLineWidth(0.8);
+          doc.line(data.cell.x, data.cell.y, data.cell.x, data.cell.y + data.cell.height);
+        }
+      }
+    });
+
+    // -- Side panel ------------------------------------------------------------
+    var sx = W - RM - 68, sy = TM + 33;
+    // Legend
+    doc.setFillColor(245,244,240);
+    doc.rect(sx, sy, 68, 6, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor(136,135,128);
+    doc.text('LEGEND', sx + 3, sy + 4);
+    doc.setFillColor(245,244,240);
+    doc.rect(sx, sy+6, 68, 6, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor(26,26,24);
+    doc.text('Standard region row', sx + 3, sy + 10);
+    doc.setFillColor(255,240,235);
+    doc.rect(sx, sy+12, 68, 6, 'F');
+    doc.setDrawColor(224,92,42); doc.setLineWidth(0.8);
+    doc.line(sx, sy+12, sx, sy+18);
+    doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(224,92,42);
+    doc.text('Country exception', sx + 3, sy + 16);
+    doc.setDrawColor(232,231,227); doc.setLineWidth(0.3);
+    doc.rect(sx, sy, 68, 18);
+
+    // Version history
+    var vy = sy + 22;
+    doc.setFillColor(245,244,240);
+    doc.rect(sx, vy, 68, 30, 'F');
+    doc.setDrawColor(232,231,227); doc.setLineWidth(0.3);
+    doc.rect(sx, vy, 68, 30);
+    doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor(136,135,128);
+    doc.text('VERSION HISTORY', sx + 3, vy + 4);
+    doc.setDrawColor(232,231,227); doc.line(sx, vy+6, sx+68, vy+6);
+    doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor(26,26,24);
+    doc.text('v1.0  ·  22 Jun 2026', sx + 3, vy + 11);
+    doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(80,80,78);
+    doc.text('First release — EMEA, Americas, APAC.', sx + 3, vy + 16);
+    doc.text('Feedback from commercial recap.', sx + 3, vy + 21);
+    doc.setFont('helvetica','bold'); doc.setTextColor(15,110,86);
+    doc.text('Valid until December 2026', sx + 3, vy + 26);
+
+    // -- Footer ----------------------------------------------------------------
+    doc.setDrawColor(232,231,227); doc.setLineWidth(0.3);
+    doc.line(LM, H - 8, W - RM, H - 8);
+    doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(136,135,128);
+    doc.text('HSD — SEO GEO Heatmap  ·  Commercial Feedback Report  ·  v' + cur.version + '  ·  ' + cur.date + '  ·  Valid until December 2026',
+      W/2, H - 5, { align: 'center' });
+
+    doc.save('HSD_SEO-GEO_v' + cur.version + '_' + cur.date + '_Commercial-Feedback.pdf');
+    btn.textContent = '⬇ Export PDF';
+    btn.disabled = false;
+  }
+
+  if (window.jspdf && window.jspdf.jsPDF) {
+    doExport();
+  } else {
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', function() {
+      loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js', function() {
+        doExport();
+      });
+    });
+  }
+});
 
 </script>
 
