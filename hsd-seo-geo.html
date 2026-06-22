@@ -55,11 +55,38 @@ svg#world-map { width: 100%; height: auto; display: block; }
 .country { stroke: #fff; stroke-width: 0.3px; transition: opacity 0.2s; cursor: default; }
 .country.active { cursor: pointer; }
 .country.active:hover { opacity: 0.75; }
-.tooltip {
-  position: fixed; background: #fff; border: 0.5px solid #ccc;
-  border-radius: 8px; padding: 6px 12px; font-size: 13px;
-  pointer-events: none; display: none; z-index: 999;
-  color: #1a1a18; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+.country.selected { stroke: #1a1a18; stroke-width: 1.5px; }
+.tooltip { display: none; } /* legacy — replaced by map-popup */
+.map-popup {
+  position: fixed; background: #fff; border: 0.5px solid #ddd;
+  border-radius: 12px; padding: 12px 16px; font-size: 12px;
+  pointer-events: none; display: none; z-index: 1000;
+  color: #1a1a18; box-shadow: 0 4px 20px rgba(0,0,0,0.13);
+  min-width: 180px; max-width: 280px;
+}
+.map-popup-name {
+  font-size: 13px; font-weight: 600; margin-bottom: 8px;
+  padding-bottom: 6px; border-bottom: 1px solid #f0efeb;
+}
+.map-popup-sector { margin-bottom: 6px; }
+.map-popup-sector-label {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600; color: #555;
+  text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;
+}
+.map-popup-sector-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.map-popup-tags { display: flex; flex-wrap: wrap; gap: 3px; padding-left: 12px; }
+.map-popup-tag {
+  font-size: 10px; padding: 1px 7px; border-radius: 999px;
+  color: #fff; font-weight: 500;
+}
+.map-popup-mat-label {
+  font-size: 10px; color: #999; padding-left: 12px; margin-bottom: 2px; margin-top: 3px;
+  font-style: italic;
+}
+.map-popup-hint {
+  font-size: 10px; color: #bbb; margin-top: 8px; padding-top: 6px;
+  border-top: 1px solid #f0efeb; text-align: center;
 }
 .macro-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 0.75rem; min-height: 24px; }
 .macro-pill {
@@ -154,6 +181,11 @@ svg#world-map { width: 100%; height: auto; display: block; }
   <div class="legend-item"><div class="legend-dot" style="background:#E0DED8"></div><span>Not selected</span></div>
 </div>
 <div class="tooltip" id="tooltip"></div>
+<div class="map-popup" id="map-popup">
+  <div class="map-popup-name" id="popup-name"></div>
+  <div id="popup-body"></div>
+
+</div>
 
 <!-- ── Country Explorer Panel ─────────────────────────────────────────────── -->
 <div class="explorer-wrap">
@@ -870,21 +902,101 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
         var paddedId = numId ? String(numId).padStart(3,'0') : '';
         this.dataset.iso3 = ISO_MAP[paddedId] || '';
       })
-      .on('mousemove', function(event) {
+      .on('mousemove', function() {})
+      .on('mouseleave', function() {})
+      .on('click', function(event) {
         const iso3 = this.dataset.iso3;
         if (!isCountryActive(iso3)) return;
+
+        // ── Show popup ───────────────────────────────────────────────────────
+        const popup = document.getElementById('map-popup');
+        const popupName = document.getElementById('popup-name');
+        const popupBody = document.getElementById('popup-body');
         const c = COUNTRIES[iso3];
-        tooltipEl.style.display = 'block';
-        tooltipEl.style.left = (event.clientX + 12) + 'px';
-        tooltipEl.style.top  = (event.clientY - 28) + 'px';
-        const rl = REGION_LABEL[iso3];
-        tooltipEl.textContent = (rl ? rl.label : c.name) + ' — ' + getBreadcrumb();
-      })
-      .on('mouseleave', function() { tooltipEl.style.display = 'none'; });
+        popupName.textContent = c.name;
+        popupBody.innerHTML = '';
+        SECTORS.forEach(function(s) {
+          const sd = c.active[s];
+          if (!sd || !sd._all) return;
+          const secBlock = document.createElement('div');
+          secBlock.className = 'map-popup-sector';
+          const secLabel = document.createElement('div');
+          secLabel.className = 'map-popup-sector-label';
+          const sdot = document.createElement('span');
+          sdot.className = 'map-popup-sector-dot';
+          sdot.style.background = SECTOR_COLOR[s];
+          secLabel.appendChild(sdot);
+          secLabel.appendChild(document.createTextNode(s));
+          secBlock.appendChild(secLabel);
+          const matKeys = Object.keys(sd.materials).filter(function(m){ return sd.materials[m]._all; });
+          if (matKeys.length === 0) {
+            const note = document.createElement('div');
+            note.className = 'map-popup-mat-label';
+            note.textContent = 'Brand awareness focus';
+            secBlock.appendChild(note);
+          } else {
+            matKeys.forEach(function(mat) {
+              const md = sd.materials[mat];
+              const mc = MATERIALS[mat];
+              const prods = [];
+              Object.keys(md.families).forEach(function(fam) {
+                const fd = md.families[fam];
+                if (!fd._all) return;
+                Object.keys(fd.products).forEach(function(p) { if (fd.products[p]) prods.push(p); });
+              });
+              if (!prods.length) return;
+              const matLbl = document.createElement('div');
+              matLbl.className = 'map-popup-mat-label';
+              matLbl.textContent = mat;
+              secBlock.appendChild(matLbl);
+              const tagsWrap = document.createElement('div');
+              tagsWrap.className = 'map-popup-tags';
+              prods.forEach(function(p) {
+                const tag = document.createElement('span');
+                tag.className = 'map-popup-tag';
+                tag.style.background = mc ? mc.solidColor : '#888';
+                tag.textContent = p;
+                tagsWrap.appendChild(tag);
+              });
+              secBlock.appendChild(tagsWrap);
+            });
+          }
+          popupBody.appendChild(secBlock);
+        });
+        if (!popupBody.innerHTML) {
+          popupBody.innerHTML = '<span style="font-size:11px;color:#aaa;font-style:italic;">No product data yet</span>';
+        }
+        // Position popup near click
+        popup.style.display = 'block';
+        const pw = 280, ph = popup.offsetHeight || 200;
+        let left = event.clientX + 16;
+        let top  = event.clientY - 20;
+        if (left + pw > window.innerWidth - 10) left = event.clientX - pw - 10;
+        if (top + ph > window.innerHeight - 10) top = window.innerHeight - ph - 10;
+        if (top < 10) top = 10;
+        popup.style.left = left + 'px';
+        popup.style.top  = top + 'px';
+
+        // Close popup when clicking elsewhere
+        setTimeout(function() {
+          document.addEventListener('click', function closePopup(e) {
+            if (!popup.contains(e.target)) {
+              popup.style.display = 'none';
+              document.removeEventListener('click', closePopup);
+            }
+          });
+        }, 10);
+
+        // Highlight selected country
+        d3.selectAll('.country').classed('selected', false);
+        d3.select(this).classed('selected', true);
+
+      });
     refreshAll();
   });
 
 // ── COUNTRY EXPLORER ──────────────────────────────────────────────────────────
+var renderCountry; // exposed for map click
 (function() {
   const regionSelect = document.getElementById('explorer-region');
   const select       = document.getElementById('explorer-select');
@@ -928,10 +1040,11 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
 
   select.addEventListener('change', function() {
     const region = regionSelect.value;
+    d3.selectAll('.country').classed('selected', false);
     if (!select.value) {
-      // Back to "All countries" — show full region
       renderArea(MACRO[region] || [], region);
     } else {
+      d3.selectAll('.country').filter(function() { return this.dataset.iso3 === select.value; }).classed('selected', true);
       renderCountry(select.value);
     }
   });
@@ -1049,7 +1162,7 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
     output.appendChild(grid);
   }
 
-  function renderCountry(iso) {
+  renderCountry = function renderCountry(iso) {
     const c = COUNTRIES[iso];
     if (!c) { output.innerHTML = '<span class="explorer-empty">No country selected.</span>'; return; }
 
@@ -1173,6 +1286,7 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
     select.innerHTML = '<option value="">— Select a country —</option>';
     select.disabled = true; select.style.opacity = '0.5';
     output.innerHTML = '<span class="explorer-empty">No country selected.</span>';
+    d3.selectAll('.country').classed('selected', false);
   });
 })();
 
