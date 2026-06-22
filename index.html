@@ -116,7 +116,9 @@ const REGION_LABEL = {
   'PRY': { label:'Latam', region:'LATAM' },
   'SUR': { label:'Latam', region:'LATAM' },
   'URY': { label:'Latam', region:'LATAM' },
-  'VEN': { label:'Latam', region:'LATAM' }
+  'VEN': { label:'Latam', region:'LATAM' },
+  'AUS': { label:'Australia & NZ', region:'AUSNZ' },
+  'NZL': { label:'Australia & NZ', region:'AUSNZ' }
 };
 
 const ME = {
@@ -142,6 +144,14 @@ const LATAM = {
   'Materia':       { all:true,  subs:{'Cutting':false,'Finishing':false,'Multi-machining':true} },
   'Metal':         { all:false, subs:{'Cutting':false} },
   'Customer Care': { all:true,  subs:{'Services':false,'Maintenance':false,'Components':true,'Training':false} }
+};
+const AUSNZ = {
+  'Wood':          { all:true,  subs:{'Cutting':false,'Edging':false,'Drilling':false,'Finishing':false,'Multi-machining':true} },
+  'Glass':         { all:true,  subs:{'Cutting':true,'Edging':false,'Drilling':false,'Multi-machining':false} },
+  'Stone':         { all:true,  subs:{'Cutting':true,'Edging':false,'Finishing':false,'Multi-machining':false} },
+  'Materia':       { all:true,  subs:{'Cutting':false,'Finishing':false,'Multi-machining':true} },
+  'Metal':         { all:true,  subs:{'Cutting':true} },
+  'Customer Care': { all:false, subs:{'Services':false,'Maintenance':false,'Components':false,'Training':false} }
 };
 
 const COUNTRIES = {
@@ -185,21 +195,23 @@ const COUNTRIES = {
     'Metal':         { all:false, subs:{'Cutting':false} },
     'Customer Care': { all:true,  subs:{'Services':false,'Maintenance':false,'Components':true,'Training':false} }
   }},
-  'TUR': { iso:'TUR', name:'Turkey',       active: TR  },
-  'SAU': { iso:'SAU', name:'Saudi Arabia', active: ME  },
-  'ARE': { iso:'ARE', name:'UAE',          active: ME  },
-  'QAT': { iso:'QAT', name:'Qatar',        active: ME  },
-  'KWT': { iso:'KWT', name:'Kuwait',       active: ME  },
-  'OMN': { iso:'OMN', name:'Oman',         active: ME  },
-  'BHR': { iso:'BHR', name:'Bahrain',      active: ME  },
-  'YEM': { iso:'YEM', name:'Yemen',        active: ME  },
-  'ISR': { iso:'ISR', name:'Israel',       active: ME  },
-  'JOR': { iso:'JOR', name:'Jordan',       active: ME  },
-  'LBN': { iso:'LBN', name:'Lebanon',      active: ME  },
-  'SYR': { iso:'SYR', name:'Syria',        active: ME  },
-  'PSE': { iso:'PSE', name:'Palestine',    active: ME  },
-  'IRQ': { iso:'IRQ', name:'Iraq',         active: ME  },
-  'IRN': { iso:'IRN', name:'Iran',         active: ME  },
+  'TUR': { iso:'TUR', name:'Turkey',       active: TR    },
+  'AUS': { iso:'AUS', name:'Australia',    active: AUSNZ },
+  'NZL': { iso:'NZL', name:'New Zealand',  active: AUSNZ },
+  'SAU': { iso:'SAU', name:'Saudi Arabia', active: ME    },
+  'ARE': { iso:'ARE', name:'UAE',          active: ME    },
+  'QAT': { iso:'QAT', name:'Qatar',        active: ME    },
+  'KWT': { iso:'KWT', name:'Kuwait',       active: ME    },
+  'OMN': { iso:'OMN', name:'Oman',         active: ME    },
+  'BHR': { iso:'BHR', name:'Bahrain',      active: ME    },
+  'YEM': { iso:'YEM', name:'Yemen',        active: ME    },
+  'ISR': { iso:'ISR', name:'Israel',       active: ME    },
+  'JOR': { iso:'JOR', name:'Jordan',       active: ME    },
+  'LBN': { iso:'LBN', name:'Lebanon',      active: ME    },
+  'SYR': { iso:'SYR', name:'Syria',        active: ME    },
+  'PSE': { iso:'PSE', name:'Palestine',    active: ME    },
+  'IRQ': { iso:'IRQ', name:'Iraq',         active: ME    },
+  'IRN': { iso:'IRN', name:'Iran',         active: ME    },
   'MEX': { iso:'MEX', name:'Mexico',       active: LATAM },
   'BRA': { iso:'BRA', name:'Brazil',       active: LATAM },
   'ARG': { iso:'ARG', name:'Argentina',    active: LATAM },
@@ -301,9 +313,9 @@ function updateSubBtns() {
       b.style.borderColor = solidColor(currentGroup);
       b.style.color       = '#fff';
     } else {
-      b.style.background  = '';
+      b.style.background = '';
       b.style.borderColor = '';
-      b.style.color       = '';
+      b.style.color = '';
     }
   });
 }
