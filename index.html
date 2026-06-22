@@ -9,6 +9,19 @@
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a18; padding: 2rem; }
 h1 { font-size: 20px; font-weight: 500; margin-bottom: 0.25rem; }
 .desc { font-size: 13px; color: #888; margin-bottom: 1rem; }
+
+/* TOP BAR */
+.top-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 0.25rem; }
+.country-select-wrap { display: flex; align-items: center; gap: 8px; }
+.country-select-wrap label { font-size: 13px; color: #888; }
+.country-select {
+  padding: 6px 12px; border-radius: 999px; font-size: 13px;
+  border: 1.5px solid #ccc; background: #fff; color: #1a1a18;
+  cursor: pointer; outline: none;
+}
+.country-select:focus { border-color: #aaa; }
+
+/* TABS */
 .tabs { display: flex; gap: 8px; flex-wrap: wrap; padding: 0.5rem 0; }
 .tab-btn {
   display: flex; align-items: center; gap: 6px;
@@ -39,8 +52,8 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 0.25rem; }
 .map-wrap { width: 100%; border-radius: 12px; overflow: hidden; background: #eeedea; padding: 0.25rem; }
 svg#world-map { width: 100%; height: auto; display: block; }
 .country { stroke: #fff; stroke-width: 0.3px; transition: opacity 0.2s; cursor: default; }
-.country.active { cursor: pointer; }
-.country.active:hover { opacity: 0.75; }
+.country.clickable { cursor: pointer; }
+.country.clickable:hover { opacity: 0.75; }
 .tooltip {
   position: fixed; background: #fff; border: 0.5px solid #ccc;
   border-radius: 8px; padding: 6px 12px; font-size: 13px;
@@ -50,11 +63,60 @@ svg#world-map { width: 100%; height: auto; display: block; }
 .legend { display: flex; align-items: center; gap: 16px; margin-top: 0.75rem; font-size: 12px; color: #888; flex-wrap: wrap; }
 .legend-item { display: flex; align-items: center; gap: 5px; }
 .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.25);
+  z-index: 1000; display: none; align-items: center; justify-content: center;
+}
+.modal-overlay.visible { display: flex; }
+.modal {
+  background: #fff; border-radius: 16px; padding: 1.75rem;
+  min-width: 320px; max-width: 480px; width: 90%;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  position: relative;
+}
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+.modal-title { font-size: 18px; font-weight: 600; color: #1a1a18; }
+.modal-close {
+  width: 28px; height: 28px; border-radius: 50%; border: none;
+  background: #f0efeb; cursor: pointer; font-size: 16px; color: #666;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.modal-close:hover { background: #e4e2dc; }
+.modal-group { margin-bottom: 0.875rem; }
+.modal-group:last-child { margin-bottom: 0; }
+.modal-group-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 0.4rem;
+}
+.modal-group-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.modal-group-name { font-size: 14px; font-weight: 500; color: #1a1a18; }
+.modal-subs { display: flex; gap: 6px; flex-wrap: wrap; padding-left: 17px; }
+.modal-sub {
+  font-size: 12px; padding: 2px 9px; border-radius: 999px;
+  font-weight: 500; color: #fff;
+}
+.modal-none { font-size: 12px; color: #bbb; padding-left: 17px; font-style: italic; }
+.modal-inactive .modal-group-name { color: #bbb; }
+.modal-inactive .modal-group-dot { background: #E0DED8 !important; }
 </style>
 </head>
 <body>
 <h1>SEO GEO Heatmap</h1>
 <p class="desc">Seleziona un materiale per visualizzare i paesi con volontà SEO attiva. Usa i sotto-filtri per lavorazione specifica.</p>
+
+<div class="top-bar">
+  <div></div>
+  <div class="country-select-wrap">
+    <label for="country-select">Scheda paese:</label>
+    <select class="country-select" id="country-select">
+      <option value="">— Seleziona —</option>
+    </select>
+  </div>
+</div>
+
 <div class="tabs" id="tabs"></div>
 <div class="sub-filters" id="sub-filters"><span class="sub-label">Lavorazione:</span></div>
 <p class="subtitle" id="subtitle"></p>
@@ -72,8 +134,20 @@ svg#world-map { width: 100%; height: auto; display: block; }
 <div class="legend">
   <div class="legend-item"><div class="legend-dot" id="legend-active-dot"></div><span id="legend-active-label">Attivo</span></div>
   <div class="legend-item"><div class="legend-dot" style="background:#E0DED8"></div><span>Non selezionato</span></div>
+  <div class="legend-item" style="font-size:12px;color:#888;">· Click su un paese per la scheda dettaglio</div>
 </div>
 <div class="tooltip" id="tooltip"></div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title"></span>
+      <button class="modal-close" id="modal-close">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
@@ -86,171 +160,182 @@ const GROUPS = {
   'Metal':         { color:'#5F5E5A', dotBg:'#5F5E5A', dotPattern:false, subs:['Cutting'] },
   'Customer Care': { color:'url(#cc-pattern)', solidColor:'#888780', dotBg:null, dotPattern:true, subs:['Services','Maintenance','Components','Training'] }
 };
-
 const INACTIVE = '#E0DED8';
 
 const REGION_LABEL = {
-  'SAU': { label:'Middle East', region:'ME' },
-  'ARE': { label:'Middle East', region:'ME' },
-  'QAT': { label:'Middle East', region:'ME' },
-  'KWT': { label:'Middle East', region:'ME' },
-  'OMN': { label:'Middle East', region:'ME' },
-  'BHR': { label:'Middle East', region:'ME' },
-  'YEM': { label:'Middle East', region:'ME' },
-  'ISR': { label:'Middle East', region:'ME' },
-  'JOR': { label:'Middle East', region:'ME' },
-  'LBN': { label:'Middle East', region:'ME' },
-  'SYR': { label:'Middle East', region:'ME' },
-  'PSE': { label:'Middle East', region:'ME' },
-  'IRQ': { label:'Middle East', region:'ME' },
-  'IRN': { label:'Middle East', region:'ME' },
-  'MEX': { label:'Latam', region:'LATAM' },
-  'BRA': { label:'Latam', region:'LATAM' },
-  'ARG': { label:'Latam', region:'LATAM' },
-  'CHL': { label:'Latam', region:'LATAM' },
-  'COL': { label:'Latam', region:'LATAM' },
-  'PER': { label:'Latam', region:'LATAM' },
-  'BOL': { label:'Latam', region:'LATAM' },
-  'ECU': { label:'Latam', region:'LATAM' },
-  'GUY': { label:'Latam', region:'LATAM' },
-  'PRY': { label:'Latam', region:'LATAM' },
-  'SUR': { label:'Latam', region:'LATAM' },
-  'URY': { label:'Latam', region:'LATAM' },
-  'VEN': { label:'Latam', region:'LATAM' },
-  'GTM': { label:'Latam', region:'LATAM' },
-  'BLZ': { label:'Latam', region:'LATAM' },
-  'SLV': { label:'Latam', region:'LATAM' },
-  'HND': { label:'Latam', region:'LATAM' },
-  'NIC': { label:'Latam', region:'LATAM' },
-  'CRI': { label:'Latam', region:'LATAM' },
-  'PAN': { label:'Latam', region:'LATAM' },
-  'AUS': { label:'Australia & NZ', region:'AUSNZ' },
-  'NZL': { label:'Australia & NZ', region:'AUSNZ' }
+  'SAU':{ label:'Middle East', region:'ME' }, 'ARE':{ label:'Middle East', region:'ME' },
+  'QAT':{ label:'Middle East', region:'ME' }, 'KWT':{ label:'Middle East', region:'ME' },
+  'OMN':{ label:'Middle East', region:'ME' }, 'BHR':{ label:'Middle East', region:'ME' },
+  'YEM':{ label:'Middle East', region:'ME' }, 'ISR':{ label:'Middle East', region:'ME' },
+  'JOR':{ label:'Middle East', region:'ME' }, 'LBN':{ label:'Middle East', region:'ME' },
+  'SYR':{ label:'Middle East', region:'ME' }, 'PSE':{ label:'Middle East', region:'ME' },
+  'IRQ':{ label:'Middle East', region:'ME' }, 'IRN':{ label:'Middle East', region:'ME' },
+  'MEX':{ label:'Latam', region:'LATAM' }, 'BRA':{ label:'Latam', region:'LATAM' },
+  'ARG':{ label:'Latam', region:'LATAM' }, 'CHL':{ label:'Latam', region:'LATAM' },
+  'COL':{ label:'Latam', region:'LATAM' }, 'PER':{ label:'Latam', region:'LATAM' },
+  'BOL':{ label:'Latam', region:'LATAM' }, 'ECU':{ label:'Latam', region:'LATAM' },
+  'GUY':{ label:'Latam', region:'LATAM' }, 'PRY':{ label:'Latam', region:'LATAM' },
+  'SUR':{ label:'Latam', region:'LATAM' }, 'URY':{ label:'Latam', region:'LATAM' },
+  'VEN':{ label:'Latam', region:'LATAM' }, 'GTM':{ label:'Latam', region:'LATAM' },
+  'BLZ':{ label:'Latam', region:'LATAM' }, 'SLV':{ label:'Latam', region:'LATAM' },
+  'HND':{ label:'Latam', region:'LATAM' }, 'NIC':{ label:'Latam', region:'LATAM' },
+  'CRI':{ label:'Latam', region:'LATAM' }, 'PAN':{ label:'Latam', region:'LATAM' },
+  'AUS':{ label:'Australia & NZ', region:'AUSNZ' }, 'NZL':{ label:'Australia & NZ', region:'AUSNZ' }
 };
 
 const ME = {
-  'Wood':          { all:true,  subs:{'Cutting':false,'Edging':true,'Drilling':false,'Finishing':false,'Multi-machining':false} },
-  'Glass':         { all:true,  subs:{'Cutting':false,'Edging':true,'Drilling':false,'Multi-machining':false} },
-  'Stone':         { all:true,  subs:{'Cutting':true,'Edging':false,'Finishing':false,'Multi-machining':true} },
-  'Materia':       { all:false, subs:{'Cutting':false,'Finishing':false,'Multi-machining':false} },
-  'Metal':         { all:false, subs:{'Cutting':false} },
-  'Customer Care': { all:true,  subs:{'Services':true,'Maintenance':false,'Components':false,'Training':false} }
+  'Wood':{'all':true,'subs':{'Cutting':false,'Edging':true,'Drilling':false,'Finishing':false,'Multi-machining':false}},
+  'Glass':{'all':true,'subs':{'Cutting':false,'Edging':true,'Drilling':false,'Multi-machining':false}},
+  'Stone':{'all':true,'subs':{'Cutting':true,'Edging':false,'Finishing':false,'Multi-machining':true}},
+  'Materia':{'all':false,'subs':{'Cutting':false,'Finishing':false,'Multi-machining':false}},
+  'Metal':{'all':false,'subs':{'Cutting':false}},
+  'Customer Care':{'all':true,'subs':{'Services':true,'Maintenance':false,'Components':false,'Training':false}}
 };
 const TR = {
-  'Wood':          { all:true,  subs:{'Cutting':false,'Edging':true,'Drilling':false,'Finishing':false,'Multi-machining':false} },
-  'Glass':         { all:true,  subs:{'Cutting':false,'Edging':true,'Drilling':false,'Multi-machining':false} },
-  'Stone':         { all:true,  subs:{'Cutting':true,'Edging':false,'Finishing':false,'Multi-machining':true} },
-  'Materia':       { all:false, subs:{'Cutting':false,'Finishing':false,'Multi-machining':false} },
-  'Metal':         { all:false, subs:{'Cutting':false} },
-  'Customer Care': { all:true,  subs:{'Services':false,'Maintenance':false,'Components':true,'Training':false} }
+  'Wood':{'all':true,'subs':{'Cutting':false,'Edging':true,'Drilling':false,'Finishing':false,'Multi-machining':false}},
+  'Glass':{'all':true,'subs':{'Cutting':false,'Edging':true,'Drilling':false,'Multi-machining':false}},
+  'Stone':{'all':true,'subs':{'Cutting':true,'Edging':false,'Finishing':false,'Multi-machining':true}},
+  'Materia':{'all':false,'subs':{'Cutting':false,'Finishing':false,'Multi-machining':false}},
+  'Metal':{'all':false,'subs':{'Cutting':false}},
+  'Customer Care':{'all':true,'subs':{'Services':false,'Maintenance':false,'Components':true,'Training':false}}
 };
 const LATAM = {
-  'Wood':          { all:true,  subs:{'Cutting':false,'Edging':false,'Drilling':false,'Finishing':false,'Multi-machining':true} },
-  'Glass':         { all:true,  subs:{'Cutting':false,'Edging':false,'Drilling':false,'Multi-machining':true} },
-  'Stone':         { all:false, subs:{'Cutting':false,'Edging':false,'Finishing':false,'Multi-machining':false} },
-  'Materia':       { all:true,  subs:{'Cutting':false,'Finishing':false,'Multi-machining':true} },
-  'Metal':         { all:false, subs:{'Cutting':false} },
-  'Customer Care': { all:true,  subs:{'Services':false,'Maintenance':false,'Components':true,'Training':false} }
+  'Wood':{'all':true,'subs':{'Cutting':false,'Edging':false,'Drilling':false,'Finishing':false,'Multi-machining':true}},
+  'Glass':{'all':true,'subs':{'Cutting':false,'Edging':false,'Drilling':false,'Multi-machining':true}},
+  'Stone':{'all':false,'subs':{'Cutting':false,'Edging':false,'Finishing':false,'Multi-machining':false}},
+  'Materia':{'all':true,'subs':{'Cutting':false,'Finishing':false,'Multi-machining':true}},
+  'Metal':{'all':false,'subs':{'Cutting':false}},
+  'Customer Care':{'all':true,'subs':{'Services':false,'Maintenance':false,'Components':true,'Training':false}}
 };
 const AUSNZ = {
-  'Wood':          { all:true,  subs:{'Cutting':false,'Edging':false,'Drilling':false,'Finishing':false,'Multi-machining':true} },
-  'Glass':         { all:true,  subs:{'Cutting':true,'Edging':false,'Drilling':false,'Multi-machining':false} },
-  'Stone':         { all:true,  subs:{'Cutting':true,'Edging':false,'Finishing':false,'Multi-machining':false} },
-  'Materia':       { all:true,  subs:{'Cutting':false,'Finishing':false,'Multi-machining':true} },
-  'Metal':         { all:true,  subs:{'Cutting':true} },
-  'Customer Care': { all:false, subs:{'Services':false,'Maintenance':false,'Components':false,'Training':false} }
+  'Wood':{'all':true,'subs':{'Cutting':false,'Edging':false,'Drilling':false,'Finishing':false,'Multi-machining':true}},
+  'Glass':{'all':true,'subs':{'Cutting':true,'Edging':false,'Drilling':false,'Multi-machining':false}},
+  'Stone':{'all':true,'subs':{'Cutting':true,'Edging':false,'Finishing':false,'Multi-machining':false}},
+  'Materia':{'all':true,'subs':{'Cutting':false,'Finishing':false,'Multi-machining':true}},
+  'Metal':{'all':true,'subs':{'Cutting':true}},
+  'Customer Care':{'all':false,'subs':{'Services':false,'Maintenance':false,'Components':false,'Training':false}}
 };
 
 const COUNTRIES = {
-  'USA': { iso:'USA', name:'United States', active:{
-    'Wood':          { all:true,  subs:{'Cutting':false,'Edging':false,'Drilling':false,'Finishing':false,'Multi-machining':true} },
-    'Glass':         { all:false, subs:{'Cutting':false,'Edging':false,'Drilling':false,'Multi-machining':false} },
-    'Stone':         { all:true,  subs:{'Cutting':true,'Edging':true,'Finishing':false,'Multi-machining':false} },
-    'Materia':       { all:false, subs:{'Cutting':false,'Finishing':false,'Multi-machining':false} },
-    'Metal':         { all:true,  subs:{'Cutting':true} },
-    'Customer Care': { all:true,  subs:{'Services':true,'Maintenance':false,'Components':false,'Training':false} }
+  'USA':{ iso:'USA', name:'United States', active:{
+    'Wood':{'all':true,'subs':{'Cutting':false,'Edging':false,'Drilling':false,'Finishing':false,'Multi-machining':true}},
+    'Glass':{'all':false,'subs':{'Cutting':false,'Edging':false,'Drilling':false,'Multi-machining':false}},
+    'Stone':{'all':true,'subs':{'Cutting':true,'Edging':true,'Finishing':false,'Multi-machining':false}},
+    'Materia':{'all':false,'subs':{'Cutting':false,'Finishing':false,'Multi-machining':false}},
+    'Metal':{'all':true,'subs':{'Cutting':true}},
+    'Customer Care':{'all':true,'subs':{'Services':true,'Maintenance':false,'Components':false,'Training':false}}
   }},
-  'CAN': { iso:'CAN', name:'Canada', active:{
-    'Wood':          { all:true,  subs:{'Cutting':false,'Edging':false,'Drilling':false,'Finishing':false,'Multi-machining':true} },
-    'Glass':         { all:false, subs:{'Cutting':false,'Edging':false,'Drilling':false,'Multi-machining':false} },
-    'Stone':         { all:true,  subs:{'Cutting':true,'Edging':true,'Finishing':false,'Multi-machining':false} },
-    'Materia':       { all:false, subs:{'Cutting':false,'Finishing':false,'Multi-machining':false} },
-    'Metal':         { all:true,  subs:{'Cutting':true} },
-    'Customer Care': { all:true,  subs:{'Services':true,'Maintenance':false,'Components':false,'Training':false} }
+  'CAN':{ iso:'CAN', name:'Canada', active:{
+    'Wood':{'all':true,'subs':{'Cutting':false,'Edging':false,'Drilling':false,'Finishing':false,'Multi-machining':true}},
+    'Glass':{'all':false,'subs':{'Cutting':false,'Edging':false,'Drilling':false,'Multi-machining':false}},
+    'Stone':{'all':true,'subs':{'Cutting':true,'Edging':true,'Finishing':false,'Multi-machining':false}},
+    'Materia':{'all':false,'subs':{'Cutting':false,'Finishing':false,'Multi-machining':false}},
+    'Metal':{'all':true,'subs':{'Cutting':true}},
+    'Customer Care':{'all':true,'subs':{'Services':true,'Maintenance':false,'Components':false,'Training':false}}
   }},
-  'IND': { iso:'IND', name:'India', active:{
-    'Wood':          { all:true,  subs:{'Cutting':true,'Edging':true,'Drilling':false,'Finishing':false,'Multi-machining':true} },
-    'Glass':         { all:true,  subs:{'Cutting':true,'Edging':false,'Drilling':false,'Multi-machining':false} },
-    'Stone':         { all:true,  subs:{'Cutting':false,'Edging':false,'Finishing':false,'Multi-machining':true} },
-    'Materia':       { all:true,  subs:{'Cutting':false,'Finishing':false,'Multi-machining':true} },
-    'Metal':         { all:false, subs:{'Cutting':false} },
-    'Customer Care': { all:false, subs:{'Services':false,'Maintenance':false,'Components':false,'Training':false} }
+  'IND':{ iso:'IND', name:'India', active:{
+    'Wood':{'all':true,'subs':{'Cutting':true,'Edging':true,'Drilling':false,'Finishing':false,'Multi-machining':true}},
+    'Glass':{'all':true,'subs':{'Cutting':true,'Edging':false,'Drilling':false,'Multi-machining':false}},
+    'Stone':{'all':true,'subs':{'Cutting':false,'Edging':false,'Finishing':false,'Multi-machining':true}},
+    'Materia':{'all':true,'subs':{'Cutting':false,'Finishing':false,'Multi-machining':true}},
+    'Metal':{'all':false,'subs':{'Cutting':false}},
+    'Customer Care':{'all':false,'subs':{'Services':false,'Maintenance':false,'Components':false,'Training':false}}
   }},
-  'GBR': { iso:'GBR', name:'United Kingdom', active:{
-    'Wood':          { all:true,  subs:{'Cutting':false,'Edging':true,'Drilling':false,'Finishing':false,'Multi-machining':true} },
-    'Glass':         { all:true,  subs:{'Cutting':false,'Edging':false,'Drilling':false,'Multi-machining':true} },
-    'Stone':         { all:true,  subs:{'Cutting':true,'Edging':false,'Finishing':false,'Multi-machining':false} },
-    'Materia':       { all:true,  subs:{'Cutting':false,'Finishing':false,'Multi-machining':true} },
-    'Metal':         { all:false, subs:{'Cutting':false} },
-    'Customer Care': { all:false, subs:{'Services':false,'Maintenance':false,'Components':false,'Training':false} }
+  'GBR':{ iso:'GBR', name:'United Kingdom', active:{
+    'Wood':{'all':true,'subs':{'Cutting':false,'Edging':true,'Drilling':false,'Finishing':false,'Multi-machining':true}},
+    'Glass':{'all':true,'subs':{'Cutting':false,'Edging':false,'Drilling':false,'Multi-machining':true}},
+    'Stone':{'all':true,'subs':{'Cutting':true,'Edging':false,'Finishing':false,'Multi-machining':false}},
+    'Materia':{'all':true,'subs':{'Cutting':false,'Finishing':false,'Multi-machining':true}},
+    'Metal':{'all':false,'subs':{'Cutting':false}},
+    'Customer Care':{'all':false,'subs':{'Services':false,'Maintenance':false,'Components':false,'Training':false}}
   }},
-  'FRA': { iso:'FRA', name:'France', active:{
-    'Wood':          { all:true,  subs:{'Cutting':false,'Edging':true,'Drilling':false,'Finishing':false,'Multi-machining':false} },
-    'Glass':         { all:true,  subs:{'Cutting':false,'Edging':false,'Drilling':false,'Multi-machining':true} },
-    'Stone':         { all:true,  subs:{'Cutting':true,'Edging':false,'Finishing':false,'Multi-machining':false} },
-    'Materia':       { all:true,  subs:{'Cutting':false,'Finishing':false,'Multi-machining':true} },
-    'Metal':         { all:false, subs:{'Cutting':false} },
-    'Customer Care': { all:true,  subs:{'Services':false,'Maintenance':false,'Components':true,'Training':false} }
+  'FRA':{ iso:'FRA', name:'France', active:{
+    'Wood':{'all':true,'subs':{'Cutting':false,'Edging':true,'Drilling':false,'Finishing':false,'Multi-machining':false}},
+    'Glass':{'all':true,'subs':{'Cutting':false,'Edging':false,'Drilling':false,'Multi-machining':true}},
+    'Stone':{'all':true,'subs':{'Cutting':true,'Edging':false,'Finishing':false,'Multi-machining':false}},
+    'Materia':{'all':true,'subs':{'Cutting':false,'Finishing':false,'Multi-machining':true}},
+    'Metal':{'all':false,'subs':{'Cutting':false}},
+    'Customer Care':{'all':true,'subs':{'Services':false,'Maintenance':false,'Components':true,'Training':false}}
   }},
-  'TUR': { iso:'TUR', name:'Turkey',       active: TR    },
-  'AUS': { iso:'AUS', name:'Australia',    active: AUSNZ },
-  'NZL': { iso:'NZL', name:'New Zealand',  active: AUSNZ },
-  'SAU': { iso:'SAU', name:'Saudi Arabia', active: ME    },
-  'ARE': { iso:'ARE', name:'UAE',          active: ME    },
-  'QAT': { iso:'QAT', name:'Qatar',        active: ME    },
-  'KWT': { iso:'KWT', name:'Kuwait',       active: ME    },
-  'OMN': { iso:'OMN', name:'Oman',         active: ME    },
-  'BHR': { iso:'BHR', name:'Bahrain',      active: ME    },
-  'YEM': { iso:'YEM', name:'Yemen',        active: ME    },
-  'ISR': { iso:'ISR', name:'Israel',       active: ME    },
-  'JOR': { iso:'JOR', name:'Jordan',       active: ME    },
-  'LBN': { iso:'LBN', name:'Lebanon',      active: ME    },
-  'SYR': { iso:'SYR', name:'Syria',        active: ME    },
-  'PSE': { iso:'PSE', name:'Palestine',    active: ME    },
-  'IRQ': { iso:'IRQ', name:'Iraq',         active: ME    },
-  'IRN': { iso:'IRN', name:'Iran',         active: ME    },
-  'MEX': { iso:'MEX', name:'Mexico',       active: LATAM },
-  'BRA': { iso:'BRA', name:'Brazil',       active: LATAM },
-  'ARG': { iso:'ARG', name:'Argentina',    active: LATAM },
-  'CHL': { iso:'CHL', name:'Chile',        active: LATAM },
-  'COL': { iso:'COL', name:'Colombia',     active: LATAM },
-  'PER': { iso:'PER', name:'Peru',         active: LATAM },
-  'BOL': { iso:'BOL', name:'Bolivia',      active: LATAM },
-  'ECU': { iso:'ECU', name:'Ecuador',      active: LATAM },
-  'GUY': { iso:'GUY', name:'Guyana',       active: LATAM },
-  'PRY': { iso:'PRY', name:'Paraguay',     active: LATAM },
-  'SUR': { iso:'SUR', name:'Suriname',     active: LATAM },
-  'URY': { iso:'URY', name:'Uruguay',      active: LATAM },
-  'VEN': { iso:'VEN', name:'Venezuela',    active: LATAM },
-  'GTM': { iso:'GTM', name:'Guatemala',    active: LATAM },
-  'BLZ': { iso:'BLZ', name:'Belize',       active: LATAM },
-  'SLV': { iso:'SLV', name:'El Salvador',  active: LATAM },
-  'HND': { iso:'HND', name:'Honduras',     active: LATAM },
-  'NIC': { iso:'NIC', name:'Nicaragua',    active: LATAM },
-  'CRI': { iso:'CRI', name:'Costa Rica',   active: LATAM },
-  'PAN': { iso:'PAN', name:'Panama',       active: LATAM }
+  'TUR':{ iso:'TUR', name:'Turkey',        active: TR    },
+  'AUS':{ iso:'AUS', name:'Australia',     active: AUSNZ },
+  'NZL':{ iso:'NZL', name:'New Zealand',   active: AUSNZ },
+  'SAU':{ iso:'SAU', name:'Saudi Arabia',  active: ME    },
+  'ARE':{ iso:'ARE', name:'UAE',           active: ME    },
+  'QAT':{ iso:'QAT', name:'Qatar',         active: ME    },
+  'KWT':{ iso:'KWT', name:'Kuwait',        active: ME    },
+  'OMN':{ iso:'OMN', name:'Oman',          active: ME    },
+  'BHR':{ iso:'BHR', name:'Bahrain',       active: ME    },
+  'YEM':{ iso:'YEM', name:'Yemen',         active: ME    },
+  'ISR':{ iso:'ISR', name:'Israel',        active: ME    },
+  'JOR':{ iso:'JOR', name:'Jordan',        active: ME    },
+  'LBN':{ iso:'LBN', name:'Lebanon',       active: ME    },
+  'SYR':{ iso:'SYR', name:'Syria',         active: ME    },
+  'PSE':{ iso:'PSE', name:'Palestine',     active: ME    },
+  'IRQ':{ iso:'IRQ', name:'Iraq',          active: ME    },
+  'IRN':{ iso:'IRN', name:'Iran',          active: ME    },
+  'MEX':{ iso:'MEX', name:'Mexico',        active: LATAM },
+  'BRA':{ iso:'BRA', name:'Brazil',        active: LATAM },
+  'ARG':{ iso:'ARG', name:'Argentina',     active: LATAM },
+  'CHL':{ iso:'CHL', name:'Chile',         active: LATAM },
+  'COL':{ iso:'COL', name:'Colombia',      active: LATAM },
+  'PER':{ iso:'PER', name:'Peru',          active: LATAM },
+  'BOL':{ iso:'BOL', name:'Bolivia',       active: LATAM },
+  'ECU':{ iso:'ECU', name:'Ecuador',       active: LATAM },
+  'GUY':{ iso:'GUY', name:'Guyana',        active: LATAM },
+  'PRY':{ iso:'PRY', name:'Paraguay',      active: LATAM },
+  'SUR':{ iso:'SUR', name:'Suriname',      active: LATAM },
+  'URY':{ iso:'URY', name:'Uruguay',       active: LATAM },
+  'VEN':{ iso:'VEN', name:'Venezuela',     active: LATAM },
+  'GTM':{ iso:'GTM', name:'Guatemala',     active: LATAM },
+  'BLZ':{ iso:'BLZ', name:'Belize',        active: LATAM },
+  'SLV':{ iso:'SLV', name:'El Salvador',   active: LATAM },
+  'HND':{ iso:'HND', name:'Honduras',      active: LATAM },
+  'NIC':{ iso:'NIC', name:'Nicaragua',     active: LATAM },
+  'CRI':{ iso:'CRI', name:'Costa Rica',    active: LATAM },
+  'PAN':{ iso:'PAN', name:'Panama',        active: LATAM }
 };
+
+// Dropdown options: one entry per unique area/country
+const MODAL_ENTRIES = [
+  { key:'USA',    label:'United States',  iso:'USA'  },
+  { key:'CAN',    label:'Canada',         iso:'CAN'  },
+  { key:'IND',    label:'India',          iso:'IND'  },
+  { key:'GBR',    label:'United Kingdom', iso:'GBR'  },
+  { key:'FRA',    label:'France',         iso:'FRA'  },
+  { key:'TUR',    label:'Turkey',         iso:'TUR'  },
+  { key:'ME',     label:'Middle East',    iso:'SAU'  },
+  { key:'LATAM',  label:'Latam',          iso:'MEX'  },
+  { key:'AUSNZ',  label:'Australia & NZ', iso:'AUS'  }
+];
 
 let currentGroup = 'Wood';
 let currentSub   = null;
 
-const tabsEl     = document.getElementById('tabs');
-const subFilters = document.getElementById('sub-filters');
-const subtitleEl = document.getElementById('subtitle');
-const pillsEl    = document.getElementById('country-pills');
-const tooltipEl  = document.getElementById('tooltip');
-const legendDot  = document.getElementById('legend-active-dot');
-const legendLbl  = document.getElementById('legend-active-label');
+const tabsEl      = document.getElementById('tabs');
+const subFilters  = document.getElementById('sub-filters');
+const subtitleEl  = document.getElementById('subtitle');
+const pillsEl     = document.getElementById('country-pills');
+const tooltipEl   = document.getElementById('tooltip');
+const legendDot   = document.getElementById('legend-active-dot');
+const legendLbl   = document.getElementById('legend-active-label');
+const modalOverlay= document.getElementById('modal-overlay');
+const modalTitle  = document.getElementById('modal-title');
+const modalBody   = document.getElementById('modal-body');
+const modalClose  = document.getElementById('modal-close');
+const countrySelect = document.getElementById('country-select');
+
+// Populate dropdown
+MODAL_ENTRIES.forEach(function(e) {
+  const opt = document.createElement('option');
+  opt.value = e.iso;
+  opt.textContent = e.label;
+  countrySelect.appendChild(opt);
+});
+
+countrySelect.addEventListener('change', function() {
+  if (this.value) { openModal(this.value); this.value = ''; }
+});
 
 function solidColor(g) { return GROUPS[g].solidColor || GROUPS[g].color; }
 
@@ -263,9 +348,82 @@ function isCountryActive(iso3) {
   return gdata.all;
 }
 
+function isClickable(iso3) {
+  return !!COUNTRIES[iso3];
+}
+
 function getActiveCountries() {
   return Object.values(COUNTRIES).filter(c => isCountryActive(c.iso));
 }
+
+// MODAL
+function openModal(iso3) {
+  const c = COUNTRIES[iso3];
+  if (!c) return;
+  const rl = REGION_LABEL[iso3];
+  const displayName = rl ? rl.label : c.name;
+  modalTitle.textContent = displayName;
+  modalBody.innerHTML = '';
+
+  Object.keys(GROUPS).forEach(function(g) {
+    const gdata = c.active[g];
+    const isActive = gdata && gdata.all;
+    const activeSubs = isActive ? Object.entries(gdata.subs).filter(([k,v]) => v).map(([k]) => k) : [];
+    const col = GROUPS[g].dotPattern ? '#888780' : GROUPS[g].dotBg;
+
+    const div = document.createElement('div');
+    div.className = 'modal-group' + (isActive ? '' : ' modal-inactive');
+
+    const header = document.createElement('div');
+    header.className = 'modal-group-header';
+    const dot = document.createElement('span');
+    dot.className = 'modal-group-dot';
+    if (isActive) {
+      if (GROUPS[g].dotPattern) {
+        dot.style.cssText = 'width:9px;height:9px;border-radius:50%;background:repeating-linear-gradient(45deg,#bbb 0px,#bbb 1px,#e8e6e0 1px,#e8e6e0 3px);border:0.5px solid #999;flex-shrink:0;';
+      } else {
+        dot.style.background = col;
+      }
+    }
+    const name = document.createElement('span');
+    name.className = 'modal-group-name';
+    name.textContent = g;
+    header.appendChild(dot);
+    header.appendChild(name);
+    div.appendChild(header);
+
+    if (isActive) {
+      if (activeSubs.length > 0) {
+        const subsDiv = document.createElement('div');
+        subsDiv.className = 'modal-subs';
+        activeSubs.forEach(function(s) {
+          const tag = document.createElement('span');
+          tag.className = 'modal-sub';
+          tag.style.background = col;
+          tag.textContent = s;
+          subsDiv.appendChild(tag);
+        });
+        div.appendChild(subsDiv);
+      } else {
+        const none = document.createElement('div');
+        none.className = 'modal-none';
+        none.textContent = 'nessuna lavorazione specifica';
+        div.appendChild(none);
+      }
+    }
+
+    modalBody.appendChild(div);
+  });
+
+  modalOverlay.classList.add('visible');
+}
+
+function closeModal() {
+  modalOverlay.classList.remove('visible');
+}
+
+modalClose.addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', function(e) { if (e.target === modalOverlay) closeModal(); });
 
 function updateSubtitle() {
   const active = getActiveCountries();
@@ -276,13 +434,8 @@ function updateSubtitle() {
   active.forEach(function(c) {
     const rl = REGION_LABEL[c.iso];
     if (rl) {
-      if (!seenRegions.has(rl.region)) {
-        seenRegions.add(rl.region);
-        pills.push(rl.label);
-      }
-    } else {
-      pills.push(c.name);
-    }
+      if (!seenRegions.has(rl.region)) { seenRegions.add(rl.region); pills.push(rl.label); }
+    } else { pills.push(c.name); }
   });
   const n = pills.length;
   const label = currentSub ? currentGroup + ' › ' + currentSub : currentGroup;
@@ -315,7 +468,7 @@ function updateLegend() {
 function updateMap() {
   d3.selectAll('.country')
     .attr('fill', function() { return isCountryActive(this.dataset.iso3) ? GROUPS[currentGroup].color : INACTIVE; })
-    .classed('active', function() { return isCountryActive(this.dataset.iso3); });
+    .classed('clickable', function() { return isClickable(this.dataset.iso3); });
 }
 
 function updateSubBtns() {
@@ -323,13 +476,11 @@ function updateSubBtns() {
     const on = b.dataset.sub === currentSub;
     b.classList.toggle('active', on);
     if (on) {
-      b.style.background  = solidColor(currentGroup);
+      b.style.background = solidColor(currentGroup);
       b.style.borderColor = solidColor(currentGroup);
-      b.style.color       = '#fff';
+      b.style.color = '#fff';
     } else {
-      b.style.background = '';
-      b.style.borderColor = '';
-      b.style.color = '';
+      b.style.background = ''; b.style.borderColor = ''; b.style.color = '';
     }
   });
 }
@@ -357,7 +508,7 @@ function setGroup(g) {
     const on = b.dataset.group === g;
     b.classList.toggle('active', on);
     b.style.borderColor = on ? solidColor(g) : '';
-    b.style.color       = on ? solidColor(g) : '';
+    b.style.color = on ? solidColor(g) : '';
   });
   buildSubFilters(g); updateSubtitle(); updateLegend(); updateMap();
 }
@@ -369,8 +520,7 @@ Object.keys(GROUPS).forEach(function(g) {
   if (GROUPS[g].dotPattern) {
     dot.style.cssText = 'background:repeating-linear-gradient(45deg,#bbb 0px,#bbb 1px,#e8e6e0 1px,#e8e6e0 3px);border:0.5px solid #999;';
   } else { dot.style.background = GROUPS[g].dotBg; }
-  btn.appendChild(dot);
-  btn.appendChild(document.createTextNode(g));
+  btn.appendChild(dot); btn.appendChild(document.createTextNode(g));
   btn.addEventListener('click', function() { setGroup(g); });
   tabsEl.appendChild(btn);
 });
@@ -379,6 +529,8 @@ const ISO_MAP = {
   '840':'USA', '124':'CAN', '484':'MEX', '032':'ARG', '076':'BRA',
   '152':'CHL', '170':'COL', '604':'PER', '068':'BOL', '218':'ECU',
   '328':'GUY', '600':'PRY', '740':'SUR', '858':'URY', '862':'VEN',
+  '320':'GTM', '084':'BLZ', '222':'SLV', '340':'HND', '558':'NIC',
+  '188':'CRI', '591':'PAN',
   '276':'DEU', '380':'ITA', '250':'FRA', '724':'ESP', '826':'GBR',
   '442':'LUX', '528':'NLD', '056':'BEL', '040':'AUT', '756':'CHE',
   '616':'POL', '203':'CZE', '348':'HUN', '642':'ROU', '100':'BGR',
@@ -391,7 +543,7 @@ const ISO_MAP = {
   '048':'BHR', '887':'YEM', '376':'ISR', '400':'JOR', '422':'LBN',
   '760':'SYR', '275':'PSE', '368':'IRQ', '364':'IRN',
   '586':'PAK', '050':'BGD', '360':'IDN', '764':'THA', '704':'VNM',
-  '320':'GTM', '084':'BLZ', '222':'SLV', '340':'HND', '558':'NIC', '188':'CRI', '591':'PAN', '458':'MYS', '608':'PHL', '702':'SGP'
+  '458':'MYS', '608':'PHL', '702':'SGP'
 };
 
 const svg  = d3.select('#world-map');
@@ -409,22 +561,24 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
       .attr('d', path)
       .each(function(d) {
         var numId = parseInt(d.id, 10);
-        var paddedId = numId ? String(numId).padStart(3, '0') : '';
+        var paddedId = numId ? String(numId).padStart(3,'0') : '';
         this.dataset.iso3 = ISO_MAP[paddedId] || '';
       })
       .on('mousemove', function(event) {
         const iso3 = this.dataset.iso3;
-        if (!isCountryActive(iso3)) return;
-        const c = COUNTRIES[iso3];
+        if (!COUNTRIES[iso3]) return;
         tooltipEl.style.display = 'block';
         tooltipEl.style.left = (event.clientX + 12) + 'px';
         tooltipEl.style.top  = (event.clientY - 28) + 'px';
-        const label = currentSub ? currentGroup + ' › ' + currentSub : currentGroup;
         const rl = REGION_LABEL[iso3];
-        const displayName = rl ? rl.label : c.name;
-        tooltipEl.textContent = displayName + ' — ' + label;
+        const displayName = rl ? rl.label : COUNTRIES[iso3].name;
+        tooltipEl.textContent = displayName + ' — clicca per dettagli';
       })
-      .on('mouseleave', function() { tooltipEl.style.display = 'none'; });
+      .on('mouseleave', function() { tooltipEl.style.display = 'none'; })
+      .on('click', function() {
+        const iso3 = this.dataset.iso3;
+        if (COUNTRIES[iso3]) openModal(iso3);
+      });
     setGroup('Wood');
   });
 </script>
