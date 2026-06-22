@@ -297,19 +297,21 @@ svg#world-map { width: 100%; height: auto; display: block; }
 <script>
 // --- SECTOR -> MATERIALS -------------------------------------------------------
 const SECTOR_MATERIALS = {
-  'Aerospace':  ['Wood', 'Glass', 'Materia', 'Metal'],
-  'Marine':     ['Wood', 'Glass', 'Stone', 'Materia', 'Metal'],
-  'Automotive': ['Materia', 'Metal'],
-  'Furniture':  ['Wood', 'Glass', 'Stone', 'Materia', 'Metal'],
-  'Robotics':   ['Wood', 'Stone', 'Materia', 'Metal']
+  'Aerospace':       ['Wood', 'Glass', 'Materia', 'Metal'],
+  'Marine':          ['Wood', 'Glass', 'Stone', 'Materia', 'Metal'],
+  'Automotive':      ['Materia', 'Metal'],
+  'Furniture':       ['Wood', 'Glass', 'Stone', 'Materia', 'Metal'],
+  'Robotics':        ['Wood', 'Stone', 'Materia', 'Metal'],
+  'Brand Awareness': ['Customer Care', 'Warehouse', 'Production Site']
 };
 const SECTORS = Object.keys(SECTOR_MATERIALS);
 const SECTOR_COLOR = {
-  'Aerospace':  '#2E6FD9',
-  'Marine':     '#0FA8A8',
-  'Automotive': '#E05C2A',
-  'Furniture':  '#8B5CF6',
-  'Robotics':   '#16A34A'
+  'Aerospace':       '#2E6FD9',
+  'Marine':          '#0FA8A8',
+  'Automotive':      '#E05C2A',
+  'Furniture':       '#8B5CF6',
+  'Robotics':        '#16A34A',
+  'Brand Awareness': '#D4537E'
 };
 
 // --- MATERIALS ----------------------------------------------------------------
@@ -319,8 +321,10 @@ const MATERIALS = {
   'Stone':         { color:'#E24B4A', solidColor:'#E24B4A', dotBg:'#E24B4A', dotPattern:false },
   'Materia':       { color:'#7F77DD', solidColor:'#7F77DD', dotBg:'#7F77DD', dotPattern:false },
   'Metal':         { color:'#5F5E5A', solidColor:'#5F5E5A', dotBg:'#5F5E5A', dotPattern:false },
-  'Customer Care': { color:'url(#cc-pattern)', solidColor:'#888780', dotBg:null, dotPattern:true },
-  'Certification': { color:'#D97706', solidColor:'#D97706', dotBg:'#D97706', dotPattern:false }
+  'Customer Care':   { color:'url(#cc-pattern)', solidColor:'#888780', dotBg:null, dotPattern:true },
+  'Certification':   { color:'#D97706', solidColor:'#D97706', dotBg:'#D97706', dotPattern:false },
+  'Warehouse':       { color:'#0EA5E9', solidColor:'#0EA5E9', dotBg:'#0EA5E9', dotPattern:false },
+  'Production Site': { color:'#65A30D', solidColor:'#65A30D', dotBg:'#65A30D', dotPattern:false }
 };
 
 // --- PRODUCT TREE -------------------------------------------------------------
@@ -367,8 +371,10 @@ const PRODUCT_TREE = {
     'HST line':  ['HST610','HST810','HST910'],
     'ESiMill':   ['ESiMill200']
   },
-  'Customer Care': {},
-  'Certification': {}
+  'Customer Care':   {},
+  'Certification':   {},
+  'Warehouse':       {},
+  'Production Site': {}
 };
 
 // --- REGION LABELS ------------------------------------------------------------
@@ -558,10 +564,13 @@ EUR_ISOS.forEach(function(iso) {
   setProduct(c, 'Aerospace',  'Metal',   'HST line', 'HST610');
   setProduct(c, 'Automotive', 'Materia', 'HST line', 'HST610');
   setProduct(c, 'Automotive', 'Metal',   'HST line', 'HST610');
-  // Customer Care — set sector-level _all directly for all sectors
-  SECTORS.forEach(function(s) { setSectorOnly(c, s, true); });
-  // Certification — not tied to sector in our model; mark at Aerospace as representative
-  // (Customer Care and Certification are not in SECTOR_MATERIALS so handled via setSectorOnly above)
+  // Brand Awareness — Warehouse + Customer Care
+  ['Warehouse','Customer Care'].forEach(function(mat) {
+    if (c.active['Brand Awareness'] && c.active['Brand Awareness'].materials[mat]) {
+      c.active['Brand Awareness'].materials[mat]._all = true;
+      c.active['Brand Awareness']._all = true;
+    }
+  });
 });
 
 // -- CHINA — same as EMEA -----------------------------------------------------
@@ -610,6 +619,11 @@ EUR_ISOS.forEach(function(iso) {
   const c = COUNTRIES['JPN'];
   setSectorOnly(c, 'Automotive', true);
   setSectorOnly(c, 'Aerospace',  true);
+  // Brand Awareness — Japan: Customer Care only
+  if (c.active['Brand Awareness'] && c.active['Brand Awareness'].materials['Customer Care']) {
+    c.active['Brand Awareness'].materials['Customer Care']._all = true;
+    c.active['Brand Awareness']._all = true;
+  }
 })();
 
 // Korea — no data (stays empty)
@@ -1601,7 +1615,7 @@ document.getElementById('v-export-btn').addEventListener('click', function() {
       }
     ];
 
-    var SEC_COLOR = {'Aerospace':[46,111,217],'Marine':[15,168,168],'Automotive':[224,92,42],'Furniture':[139,92,246],'Robotics':[22,163,74]};
+    var SEC_COLOR = {'Aerospace':[46,111,217],'Marine':[15,168,168],'Automotive':[224,92,42],'Furniture':[139,92,246],'Robotics':[22,163,74],'Brand Awareness':[212,83,126]};
     var MAT_COLOR = {'Materia':[127,119,221],'Metal':[95,94,90],'Wood':[239,159,39],'Glass':[55,138,221],'Stone':[226,75,74]};
 
     var body = [];
