@@ -30,6 +30,22 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 0.25rem; }
 }
 .view-btn.active { background: #fff; color: #1a1a18; font-weight: 500; box-shadow: 0 1px 4px rgba(0,0,0,0.10); }
 
+
+/* COUNTRY FILTER */
+.country-filters {
+  display: none; gap: 6px; flex-wrap: wrap;
+  padding: 0 0 0.5rem; align-items: center;
+}
+.country-filters.visible { display: flex; }
+.country-filter-label { font-size: 12px; color: #888; margin-right: 2px; }
+.country-filter-btn {
+  padding: 4px 11px; border-radius: 999px; font-size: 12px;
+  border: 1.5px solid #ccc; background: #fff;
+  cursor: pointer; color: #666; transition: all 0.15s;
+}
+.country-filter-btn:hover { background: #f0efeb; }
+.country-filter-btn.active { background: #1a1a18; border-color: #1a1a18; color: #fff; font-weight: 500; }
+
 /* MONTH FILTER */
 .month-filters {
   display: none; gap: 6px; flex-wrap: wrap;
@@ -144,6 +160,9 @@ svg#world-map { width: 100%; height: auto; display: block; }
   <button class="view-btn" id="btn-paid" onclick="setView('paid')">Paid</button>
 </div>
 
+<div class="country-filters" id="country-filters">
+  <span class="country-filter-label">Country:</span>
+</div>
 <div class="month-filters" id="month-filters">
   <span class="month-label">Mese:</span>
 </div>
@@ -586,12 +605,18 @@ const MODAL_ENTRIES = [
   { key:'DACH',  label:'DACH',           iso:'DEU' }
 ];
 
+
+const PAID_AREAS = [
+  { key: 'DACH', label: 'DACH', isos: ['DEU','AUT','CHE'] }
+];
+
 // ── STATE ──
 let currentGroup   = 'Wood';
 let currentSub     = null;
 let currentProduct = null;
 let currentView    = 'seo';
 let currentMonth   = null;
+let currentCountry = null;
 const MONTHS_ORDER = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // ── DOM REFS ──
@@ -627,6 +652,11 @@ function isCountryActive(iso3) {
   if (currentView === 'paid') {
     const c = PAID_COUNTRIES[iso3];
     if (!c) return false;
+    // Country filter: if a country is selected, only show its isos
+    if (currentCountry) {
+      var area = PAID_AREAS.find(function(a) { return a.key === currentCountry; });
+      if (!area || !area.isos.includes(iso3)) return false;
+    }
     const gdata = c.active[currentGroup];
     if (!gdata || !gdata.all) return false;
     if (currentSub) {
@@ -665,6 +695,26 @@ function isProductPushed(prod) {
 }
 
 // ── MONTH FILTERS ──
+
+function buildCountryFilters() {
+  var cf = document.getElementById('country-filters');
+  cf.querySelectorAll('.country-filter-btn').forEach(function(b) { b.remove(); });
+  if (currentView !== 'paid') { cf.classList.remove('visible'); return; }
+  cf.classList.add('visible');
+  PAID_AREAS.forEach(function(area) {
+    var btn = document.createElement('button');
+    btn.className = 'country-filter-btn' + (currentCountry === area.key ? ' active' : '');
+    btn.textContent = area.label;
+    btn.dataset.country = area.key;
+    btn.addEventListener('click', function() {
+      currentCountry = currentCountry === area.key ? null : area.key;
+      buildCountryFilters();
+      updateSubtitle(); updateMap();
+    });
+    cf.appendChild(btn);
+  });
+}
+
 function buildMonthFilters() {
   monthFilters.querySelectorAll('.month-btn').forEach(function(b) { b.remove(); });
   if (currentView !== 'paid') { monthFilters.classList.remove('visible'); return; }
@@ -848,9 +898,10 @@ function setGroup(g) {
 }
 
 function setView(view) {
-  currentView = view; currentSub = null; currentProduct = null; currentMonth = null;
+  currentView = view; currentSub = null; currentProduct = null; currentMonth = null; currentCountry = null;
   document.getElementById('btn-seo').classList.toggle('active', view === 'seo');
   document.getElementById('btn-paid').classList.toggle('active', view === 'paid');
+  buildCountryFilters();
   buildMonthFilters();
   buildSubFilters(currentGroup);
   buildProdFilters(currentGroup, null);
