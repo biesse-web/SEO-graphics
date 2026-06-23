@@ -317,6 +317,17 @@ const REGION_LABEL = {
   'CRI':{ label:'Latam', region:'LATAM' }, 'PAN':{ label:'Latam', region:'LATAM' },
   'AUS':{ label:'Australia & NZ', region:'AUSNZ' }, 'NZL':{ label:'Australia & NZ', region:'AUSNZ' },
   'DEU':{ label:'DACH', region:'DACH' }, 'AUT':{ label:'DACH', region:'DACH' }, 'CHE':{ label:'DACH', region:'DACH' },
+  'THA':{ label:'South East Asia', region:'SEA' },
+  'VNM':{ label:'South East Asia', region:'SEA' },
+  'MYS':{ label:'South East Asia', region:'SEA' },
+  'IDN':{ label:'South East Asia', region:'SEA' },
+  'PHL':{ label:'South East Asia', region:'SEA' },
+  'SGP':{ label:'South East Asia', region:'SEA' },
+  'MMR':{ label:'South East Asia', region:'SEA' },
+  'KHM':{ label:'South East Asia', region:'SEA' },
+  'LAO':{ label:'South East Asia', region:'SEA' },
+  'BRN':{ label:'South East Asia', region:'SEA' },
+  'TLS':{ label:'South East Asia', region:'SEA' },
   'AGO':{ label:'Trade', region:'TRADE' }, 'BFA':{ label:'Trade', region:'TRADE' },
   'BDI':{ label:'Trade', region:'TRADE' }, 'BEN':{ label:'Trade', region:'TRADE' },
   'BWA':{ label:'Trade', region:'TRADE' }, 'COD':{ label:'Trade', region:'TRADE' },
@@ -408,6 +419,14 @@ const TRADE = {
   'Customer Care':{'all':true,'subs':{'Services':false,'Maintenance':true,'Components':false,'Training':false}}
 };
 
+const SEA = {
+  'Wood':          { all:true,  subs:{'Cutting':false,'Edging':false,'Drilling':false,'Finishing':false,'Multi-machining':true} },
+  'Glass':         { all:true,  subs:{'Cutting':false,'Edging':false,'Drilling':false,'Multi-machining':true} },
+  'Stone':         { all:true,  subs:{'Cutting':false,'Edging':false,'Finishing':false,'Multi-machining':true} },
+  'Materia':       { all:false, subs:{'Cutting':false,'Finishing':false,'Multi-machining':false} },
+  'Metal':         { all:true,  subs:{'Cutting':true} },
+  'Customer Care': { all:true,  subs:{'Services':true,'Maintenance':false,'Components':false,'Training':false} }
+};
 const COUNTRIES = {
   'USA':{ iso:'USA', name:'United States', active:{
     'Wood':{'all':true,'subs':{'Cutting':false,'Edging':false,'Drilling':false,'Finishing':false,'Multi-machining':true}},
@@ -494,6 +513,17 @@ const COUNTRIES = {
   'NIC':{ iso:'NIC', name:'Nicaragua',    active: LATAM },
   'CRI':{ iso:'CRI', name:'Costa Rica',   active: LATAM },
   'PAN':{ iso:'PAN', name:'Panama',       active: LATAM },
+  'THA':{ iso:'THA', name:'Thailand', active: SEA },
+  'VNM':{ iso:'VNM', name:'Vietnam', active: SEA },
+  'MYS':{ iso:'MYS', name:'Malaysia', active: SEA },
+  'IDN':{ iso:'IDN', name:'Indonesia', active: SEA },
+  'PHL':{ iso:'PHL', name:'Philippines', active: SEA },
+  'SGP':{ iso:'SGP', name:'Singapore', active: SEA },
+  'MMR':{ iso:'MMR', name:'Myanmar', active: SEA },
+  'KHM':{ iso:'KHM', name:'Cambodia', active: SEA },
+  'LAO':{ iso:'LAO', name:'Laos', active: SEA },
+  'BRN':{ iso:'BRN', name:'Brunei', active: SEA },
+  'TLS':{ iso:'TLS', name:'Timor-Leste', active: SEA },
   'AGO':{ iso:'AGO', name:'Angola',              active: TRADE },
   'BFA':{ iso:'BFA', name:'Burkina Faso',         active: TRADE },
   'BDI':{ iso:'BDI', name:'Burundi',              active: TRADE },
@@ -601,6 +631,7 @@ const MODAL_ENTRIES = [
   { key:'ME',    label:'Middle East',    iso:'SAU' },
   { key:'LATAM', label:'Latam',          iso:'MEX' },
   { key:'AUSNZ', label:'Australia & NZ', iso:'AUS' },
+  { key:'SEA',   label:'South East Asia',iso:'THA' },
   { key:'TRADE', label:'Trade',          iso:'AGO' },
   { key:'DACH',  label:'DACH',           iso:'DEU' }
 ];
@@ -708,11 +739,38 @@ function buildCountryFilters() {
     btn.dataset.country = area.key;
     btn.addEventListener('click', function() {
       currentCountry = currentCountry === area.key ? null : area.key;
+      currentMonth = null;
       buildCountryFilters();
+      buildMonthFilters();
       updateSubtitle(); updateMap();
     });
     cf.appendChild(btn);
   });
+}
+
+function getMonthColor(month) {
+  // Returns null (no campaign), a single material color, or WATER_BLUE (multiple)
+  if (!currentCountry) return null;
+  var area = PAID_AREAS.find(function(a) { return a.key === currentCountry; });
+  if (!area) return null;
+
+  var activeColors = new Set();
+  area.isos.forEach(function(iso3) {
+    var c = PAID_COUNTRIES[iso3];
+    if (!c) return;
+    Object.keys(GROUPS).forEach(function(g) {
+      var gdata = c.active[g];
+      if (!gdata || !gdata.all) return;
+      if (gdata.months && gdata.months.includes(month)) {
+        var col = GROUPS[g].dotPattern ? '#888780' : GROUPS[g].dotBg;
+        activeColors.add(col);
+      }
+    });
+  });
+
+  if (activeColors.size === 0) return null;
+  if (activeColors.size === 1) return Array.from(activeColors)[0];
+  return '#007BA7';
 }
 
 function buildMonthFilters() {
@@ -721,8 +779,23 @@ function buildMonthFilters() {
   monthFilters.classList.add('visible');
   MONTHS_ORDER.forEach(function(m) {
     var btn = document.createElement('button');
-    btn.className = 'month-btn' + (m === currentMonth ? ' active' : '');
+    btn.className = 'month-btn';
     btn.textContent = m; btn.dataset.month = m;
+
+    var monthColor = getMonthColor(m);
+    if (m === currentMonth) {
+      // Selected: filled with color or dark
+      var bg = monthColor || '#1a1a18';
+      btn.style.background = bg;
+      btn.style.borderColor = bg;
+      btn.style.color = '#fff';
+      btn.style.fontWeight = '500';
+    } else if (monthColor) {
+      // Has campaigns: colored border
+      btn.style.borderColor = monthColor;
+      btn.style.color = monthColor;
+    }
+
     btn.addEventListener('click', function() {
       currentMonth = currentMonth === m ? null : m;
       buildMonthFilters(); updateSubtitle(); updateMap();
@@ -953,7 +1026,7 @@ const ISO_MAP = {
   '048':'BHR', '887':'YEM', '376':'ISR', '400':'JOR', '422':'LBN',
   '760':'SYR', '275':'PSE', '368':'IRQ', '364':'IRN',
   '586':'PAK', '050':'BGD', '360':'IDN', '764':'THA', '704':'VNM',
-  '458':'MYS', '608':'PHL', '702':'SGP'
+  '458':'MYS', '608':'PHL', '702':'SGP', '104':'MMR', '116':'KHM', '418':'LAO', '096':'BRN', '626':'TLS'
 };
 
 // ── MAP INIT ──
