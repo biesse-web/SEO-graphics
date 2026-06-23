@@ -21,6 +21,30 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 0.25rem; }
 }
 .country-select:focus { border-color: #aaa; }
 
+/* VIEW TOGGLE */
+.view-toggle { display: flex; gap: 4px; background: #e8e6e0; border-radius: 999px; padding: 3px; margin-bottom: 1rem; width: fit-content; }
+.view-btn {
+  padding: 6px 20px; border-radius: 999px; border: none;
+  font-size: 13px; font-weight: 400; cursor: pointer;
+  color: #888; background: transparent; transition: all 0.2s;
+}
+.view-btn.active { background: #fff; color: #1a1a18; font-weight: 500; box-shadow: 0 1px 4px rgba(0,0,0,0.10); }
+
+/* MONTH FILTER */
+.month-filters {
+  display: none; gap: 6px; flex-wrap: wrap;
+  padding: 0 0 0.5rem; align-items: center;
+}
+.month-filters.visible { display: flex; }
+.month-label { font-size: 12px; color: #888; margin-right: 2px; }
+.month-btn {
+  padding: 4px 11px; border-radius: 999px; font-size: 12px;
+  border: 1.5px solid #ccc; background: #fff;
+  cursor: pointer; color: #666; transition: all 0.15s;
+}
+.month-btn:hover { background: #f0efeb; }
+.month-btn.active { background: #1a1a18; border-color: #1a1a18; color: #fff; font-weight: 500; }
+
 /* TABS */
 .tabs { display: flex; gap: 8px; flex-wrap: wrap; padding: 0.5rem 0; }
 .tab-btn {
@@ -46,6 +70,22 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 0.25rem; }
 }
 .sub-btn:hover { background: #f0efeb; }
 .sub-btn.active { font-weight: 500; color: #fff; }
+
+/* PROD FILTERS */
+.prod-filters {
+  display: none; gap: 6px; flex-wrap: wrap;
+  padding: 0 0 0.75rem; align-items: center; min-height: 36px;
+}
+.prod-filters.visible { display: flex; }
+.prod-label { font-size: 12px; color: #888; margin-right: 2px; }
+.prod-btn {
+  padding: 4px 12px; border-radius: 999px; font-size: 12px;
+  border: 1px solid #ccc; background: #fff;
+  cursor: pointer; color: #666; transition: all 0.15s;
+}
+.prod-btn:hover { background: #f0efeb; }
+.prod-btn.active { font-weight: 500; color: #fff; }
+
 .subtitle { font-size: 13px; color: #888; margin: 0 0 0.5rem; }
 .country-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 0.75rem; min-height: 24px; }
 .country-pill { font-size: 12px; padding: 3px 10px; border-radius: 999px; font-weight: 500; color: #fff; }
@@ -73,31 +113,23 @@ svg#world-map { width: 100%; height: auto; display: block; }
 .modal {
   background: #fff; border-radius: 16px; padding: 1.75rem;
   min-width: 320px; max-width: 480px; width: 90%;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-  position: relative;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12); position: relative;
 }
 .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
 .modal-title { font-size: 18px; font-weight: 600; color: #1a1a18; }
 .modal-close {
   width: 28px; height: 28px; border-radius: 50%; border: none;
   background: #f0efeb; cursor: pointer; font-size: 16px; color: #666;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s;
+  display: flex; align-items: center; justify-content: center; transition: background 0.15s;
 }
 .modal-close:hover { background: #e4e2dc; }
 .modal-group { margin-bottom: 0.875rem; }
 .modal-group:last-child { margin-bottom: 0; }
-.modal-group-header {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 0.4rem;
-}
+.modal-group-header { display: flex; align-items: center; gap: 8px; margin-bottom: 0.4rem; }
 .modal-group-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 .modal-group-name { font-size: 14px; font-weight: 500; color: #1a1a18; }
 .modal-subs { display: flex; gap: 6px; flex-wrap: wrap; padding-left: 17px; }
-.modal-sub {
-  font-size: 12px; padding: 2px 9px; border-radius: 999px;
-  font-weight: 500; color: #fff;
-}
+.modal-sub { font-size: 12px; padding: 2px 9px; border-radius: 999px; font-weight: 500; color: #fff; }
 .modal-none { font-size: 12px; color: #bbb; padding-left: 17px; font-style: italic; }
 .modal-inactive .modal-group-name { color: #bbb; }
 .modal-inactive .modal-group-dot { background: #E0DED8 !important; }
@@ -107,18 +139,18 @@ svg#world-map { width: 100%; height: auto; display: block; }
 <h1>SEO GEO Heatmap</h1>
 <p class="desc">Seleziona un materiale per visualizzare i paesi con volontà SEO attiva. Usa i sotto-filtri per lavorazione specifica.</p>
 
-<div class="top-bar">
-  <div></div>
-  <div class="country-select-wrap">
-    <label for="country-select">Scheda paese:</label>
-    <select class="country-select" id="country-select">
-      <option value="">— Seleziona —</option>
-    </select>
-  </div>
+<div class="view-toggle">
+  <button class="view-btn active" id="btn-seo" onclick="setView('seo')">SEO</button>
+  <button class="view-btn" id="btn-paid" onclick="setView('paid')">Paid</button>
+</div>
+
+<div class="month-filters" id="month-filters">
+  <span class="month-label">Mese:</span>
 </div>
 
 <div class="tabs" id="tabs"></div>
 <div class="sub-filters" id="sub-filters"><span class="sub-label">Lavorazione:</span></div>
+<div class="prod-filters" id="prod-filters"><span class="prod-label">Prodotto:</span></div>
 <p class="subtitle" id="subtitle"></p>
 <div class="country-pills" id="country-pills"></div>
 <div class="map-wrap">
@@ -136,9 +168,18 @@ svg#world-map { width: 100%; height: auto; display: block; }
   <div class="legend-item"><div class="legend-dot" style="background:#E0DED8"></div><span>Non selezionato</span></div>
   <div class="legend-item" style="font-size:12px;color:#888;">· Click su un paese per la scheda dettaglio</div>
 </div>
+<div class="top-bar">
+  <div></div>
+  <div class="country-select-wrap">
+    <label for="country-select">Scheda paese:</label>
+    <select class="country-select" id="country-select">
+      <option value="">— Seleziona —</option>
+    </select>
+  </div>
+</div>
+
 <div class="tooltip" id="tooltip"></div>
 
-<!-- MODAL -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal">
     <div class="modal-header">
@@ -152,6 +193,7 @@ svg#world-map { width: 100%; height: auto; display: block; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <script>
+// ── GROUPS ──
 const GROUPS = {
   'Wood':          { color:'#EF9F27', dotBg:'#EF9F27', dotPattern:false, subs:['Cutting','Edging','Drilling','Finishing','Multi-machining'] },
   'Glass':         { color:'#378ADD', dotBg:'#378ADD', dotPattern:false, subs:['Cutting','Edging','Drilling','Multi-machining'] },
@@ -162,6 +204,80 @@ const GROUPS = {
 };
 const INACTIVE = '#E0DED8';
 
+// ── PRODUCTS ──
+const PRODUCTS = {
+  'Wood': {
+    'Cutting':         ['Rover Cut Go S F','Rover Cut Go SF','Rover Cut Go SF 80','Rover Cut Go SF 90K1','Rover Cut Go SF75','Rover Cut Go ST','Rover Cut Up SF'],
+    'Edging':          ['Rover Edge Go S P','Rover Edge Go S P A13','Rover Edge Go S P A14'],
+    'Drilling':        ['Rover Drill Up RV','Stream Drill Pro RV'],
+    'Finishing':       ['Rover Fin Go S','Rover Fin Go S P(SP2-SP3)','Rover Fin Pro S','Rover Fin Up S'],
+    'Multi-machining': ['Rover Multi Go N G','Rover Multi Pro W G','Rover Multi Up M G','Rover Multi Up N G','Rover Multi Up S G']
+  },
+  'Glass': {
+    'Cutting':         ['Forvet Cut Go M B AC','Intermac Cut Go L 0','Intermac Cut Go M 0','Intermac Cut Go M B','Intermac Cut Go M B AC','Intermac Cut Pro C','Intermac Cut Up C','Intermac Cut Up M 0','Intermac Cut Up M B'],
+    'Edging':          ['Intermac Edge Go S F35','Intermac Edge Pro Q 408','Intermac Edge Pro S F 50','Intermac Edge Pro SB50','Intermac Edge Up S B35','Intermac Edge Up S F50'],
+    'Drilling':        ['Intermac Drill Pro J H','Intermac Drill Up B H'],
+    'Multi-machining': ['Intermac Multi Go SH3S','Intermac Multi Go SH4S','Intermac Multi Pro S H3X','Intermac Multi Pro S H5S','Intermac Multi Up M V0X','Intermac Multi Up S H3S']
+  },
+  'Stone': {
+    'Cutting':         ['Genius Cut Pro S W','Master Cut Go B W','Master Cut Go C M','Master Cut Go C W','Master Cut Go S W','Master Cut Pro B W','Master Cut Pro C W','Master Cut Pro J C','Master Cut Up B W','Master Cut Up C W','Master Cut Up J O P','Master Cut Up S W'],
+    'Edging':          ['Master Edge Go F V','Master Edge Pro R H','Master Edge Up F H'],
+    'Finishing':       ['Master Fin Go P S','Master Fin Pro P S'],
+    'Multi-machining': ['Master Multi Go S MS','Master Multi Pro S MS','Master Multi Pro S MX','Master Multi Pro S WT','Master Multi Up S MS']
+  },
+  'Materia': {
+    'Cutting':         ['Explora Cut Up J 0','Explora Cut Up S F','Forvet Cut Go M B NXT'],
+    'Finishing':       ['Explora Fin Pro T T'],
+    'Multi-machining': ['Explora Multi Go N K','Explora Multi Pro M L','Explora Multi Pro M S','Explora Multi Up M C','Explora Multi Up N A','Explora Multi Up N B']
+  },
+  'Metal': {
+    'Cutting':         ['Explora Cut Pro S F','Tekni Cut Go J C','Tekni Cut Pro J L','Tekni Cut Up J G','Tekni Cut Up J M']
+  }
+};
+
+// ── PAID DATA ──
+const DACH_PAID = {
+  'Wood':          { all:true,  months:['Aug','Sep'], subs:{
+    'Cutting':        { active:true, months:['Aug','Sep','Oct'] },
+    'Edging':         { active:true, months:['Aug','Sep','Oct'] },
+    'Drilling':       { active:true, months:['Aug','Sep','Oct'] },
+    'Finishing':      { active:true, months:['Aug','Sep','Oct'] },
+    'Multi-machining':{ active:true, months:['Aug','Sep','Oct'] }
+  }},
+  'Glass':         { all:true,  months:['Aug','Sep'], subs:{
+    'Cutting':        { active:false, months:[] },
+    'Edging':         { active:false, months:[] },
+    'Drilling':       { active:false, months:[] },
+    'Multi-machining':{ active:false, months:[] }
+  }},
+  'Stone':         { all:true,  months:['May','Jun','Jul'], subs:{
+    'Cutting':        { active:true, months:['May','Jun','Jul'] },
+    'Edging':         { active:true, months:['May','Jun','Jul'] },
+    'Finishing':      { active:true, months:['May','Jun','Jul'] },
+    'Multi-machining':{ active:true, months:['May','Jun','Jul'] }
+  }},
+  'Materia':       { all:true,  months:['May','Jun','Jul'], subs:{
+    'Cutting':        { active:false, months:[] },
+    'Finishing':      { active:false, months:[] },
+    'Multi-machining':{ active:false, months:[] }
+  }},
+  'Metal':         { all:false, months:[], subs:{ 'Cutting':{ active:false, months:[] } } },
+  'Customer Care': { all:true,  months:['May','Jun','Jul'], subs:{
+    'Services':       { active:false, months:[] },
+    'Maintenance':    { active:false, months:[] },
+    'Components':     { active:false, months:[] },
+    'Training':       { active:false, months:[] }
+  }}
+};
+
+const PAID_COUNTRIES = {
+  'DEU': { iso:'DEU', name:'Germany',     active: DACH_PAID },
+  'AUT': { iso:'AUT', name:'Austria',     active: DACH_PAID },
+  'CHE': { iso:'CHE', name:'Switzerland', active: DACH_PAID }
+};
+const PUSHED_PRODUCTS = {};
+
+// ── REGION LABELS ──
 const REGION_LABEL = {
   'SAU':{ label:'Middle East', region:'ME' }, 'ARE':{ label:'Middle East', region:'ME' },
   'QAT':{ label:'Middle East', region:'ME' }, 'KWT':{ label:'Middle East', region:'ME' },
@@ -180,103 +296,58 @@ const REGION_LABEL = {
   'BLZ':{ label:'Latam', region:'LATAM' }, 'SLV':{ label:'Latam', region:'LATAM' },
   'HND':{ label:'Latam', region:'LATAM' }, 'NIC':{ label:'Latam', region:'LATAM' },
   'CRI':{ label:'Latam', region:'LATAM' }, 'PAN':{ label:'Latam', region:'LATAM' },
-  'AUS':{ label:'Australia & NZ', region:'AUSNZ' },
-  'AGO':{ label:'Trade', region:'TRADE' },
-  'BFA':{ label:'Trade', region:'TRADE' },
-  'BDI':{ label:'Trade', region:'TRADE' },
-  'BEN':{ label:'Trade', region:'TRADE' },
-  'BWA':{ label:'Trade', region:'TRADE' },
-  'COD':{ label:'Trade', region:'TRADE' },
-  'CAF':{ label:'Trade', region:'TRADE' },
-  'COG':{ label:'Trade', region:'TRADE' },
-  'CIV':{ label:'Trade', region:'TRADE' },
-  'CMR':{ label:'Trade', region:'TRADE' },
-  'CPV':{ label:'Trade', region:'TRADE' },
-  'DJI':{ label:'Trade', region:'TRADE' },
-  'DZA':{ label:'Trade', region:'TRADE' },
-  'EGY':{ label:'Trade', region:'TRADE' },
-  'ESH':{ label:'Trade', region:'TRADE' },
-  'ERI':{ label:'Trade', region:'TRADE' },
-  'ETH':{ label:'Trade', region:'TRADE' },
-  'GAB':{ label:'Trade', region:'TRADE' },
-  'GHA':{ label:'Trade', region:'TRADE' },
-  'GMB':{ label:'Trade', region:'TRADE' },
-  'GIN':{ label:'Trade', region:'TRADE' },
-  'GNQ':{ label:'Trade', region:'TRADE' },
-  'GNB':{ label:'Trade', region:'TRADE' },
-  'ISR':{ label:'Trade', region:'TRADE' },
-  'KEN':{ label:'Trade', region:'TRADE' },
-  'COM':{ label:'Trade', region:'TRADE' },
-  'LBR':{ label:'Trade', region:'TRADE' },
-  'LSO':{ label:'Trade', region:'TRADE' },
-  'LBY':{ label:'Trade', region:'TRADE' },
-  'MAR':{ label:'Trade', region:'TRADE' },
-  'MDG':{ label:'Trade', region:'TRADE' },
-  'MLI':{ label:'Trade', region:'TRADE' },
-  'MRT':{ label:'Trade', region:'TRADE' },
-  'MUS':{ label:'Trade', region:'TRADE' },
-  'MWI':{ label:'Trade', region:'TRADE' },
-  'MOZ':{ label:'Trade', region:'TRADE' },
-  'NAM':{ label:'Trade', region:'TRADE' },
-  'NER':{ label:'Trade', region:'TRADE' },
-  'NGA':{ label:'Trade', region:'TRADE' },
-  'RWA':{ label:'Trade', region:'TRADE' },
-  'SYC':{ label:'Trade', region:'TRADE' },
-  'SDN':{ label:'Trade', region:'TRADE' },
-  'SHN':{ label:'Trade', region:'TRADE' },
-  'SLE':{ label:'Trade', region:'TRADE' },
-  'SEN':{ label:'Trade', region:'TRADE' },
-  'SOM':{ label:'Trade', region:'TRADE' },
-  'SSD':{ label:'Trade', region:'TRADE' },
-  'STP':{ label:'Trade', region:'TRADE' },
-  'SWZ':{ label:'Trade', region:'TRADE' },
-  'TCD':{ label:'Trade', region:'TRADE' },
-  'TGO':{ label:'Trade', region:'TRADE' },
-  'TUN':{ label:'Trade', region:'TRADE' },
-  'TZA':{ label:'Trade', region:'TRADE' },
-  'UGA':{ label:'Trade', region:'TRADE' },
-  'ZAF':{ label:'Trade', region:'TRADE' },
-  'ZMB':{ label:'Trade', region:'TRADE' },
-  'ZWE':{ label:'Trade', region:'TRADE' },
-  'KAZ':{ label:'Trade', region:'TRADE' },
-  'UZB':{ label:'Trade', region:'TRADE' },
-  'TKM':{ label:'Trade', region:'TRADE' },
-  'KGZ':{ label:'Trade', region:'TRADE' },
-  'TJK':{ label:'Trade', region:'TRADE' },
-  'AFG':{ label:'Trade', region:'TRADE' },
-  'PAK':{ label:'Trade', region:'TRADE' },
-  'ISL':{ label:'Trade', region:'TRADE' },
-  'NOR':{ label:'Trade', region:'TRADE' },
-  'SWE':{ label:'Trade', region:'TRADE' },
-  'FIN':{ label:'Trade', region:'TRADE' },
-  'DNK':{ label:'Trade', region:'TRADE' },
-  'FRO':{ label:'Trade', region:'TRADE' },
-  'EST':{ label:'Trade', region:'TRADE' },
-  'LTU':{ label:'Trade', region:'TRADE' },
-  'LVA':{ label:'Trade', region:'TRADE' },
-  'BEL':{ label:'Trade', region:'TRADE' },
-  'NLD':{ label:'Trade', region:'TRADE' },
-  'LUX':{ label:'Trade', region:'TRADE' },
-  'POL':{ label:'Trade', region:'TRADE' },
-  'CZE':{ label:'Trade', region:'TRADE' },
-  'SVK':{ label:'Trade', region:'TRADE' },
-  'HUN':{ label:'Trade', region:'TRADE' },
-  'UKR':{ label:'Trade', region:'TRADE' },
-  'MDA':{ label:'Trade', region:'TRADE' },
-  'ROU':{ label:'Trade', region:'TRADE' },
-  'BGR':{ label:'Trade', region:'TRADE' },
-  'SVN':{ label:'Trade', region:'TRADE' },
-  'HRV':{ label:'Trade', region:'TRADE' },
-  'BIH':{ label:'Trade', region:'TRADE' },
-  'MNE':{ label:'Trade', region:'TRADE' },
-  'SRB':{ label:'Trade', region:'TRADE' },
-  'MKD':{ label:'Trade', region:'TRADE' },
-  'ALB':{ label:'Trade', region:'TRADE' },
-  'GRC':{ label:'Trade', region:'TRADE' },
-  'CYP':{ label:'Trade', region:'TRADE' },
-  'MLT':{ label:'Trade', region:'TRADE' }, 'NZL':{ label:'Australia & NZ', region:'AUSNZ' }
+  'AUS':{ label:'Australia & NZ', region:'AUSNZ' }, 'NZL':{ label:'Australia & NZ', region:'AUSNZ' },
+  'DEU':{ label:'DACH', region:'DACH' }, 'AUT':{ label:'DACH', region:'DACH' }, 'CHE':{ label:'DACH', region:'DACH' },
+  'AGO':{ label:'Trade', region:'TRADE' }, 'BFA':{ label:'Trade', region:'TRADE' },
+  'BDI':{ label:'Trade', region:'TRADE' }, 'BEN':{ label:'Trade', region:'TRADE' },
+  'BWA':{ label:'Trade', region:'TRADE' }, 'COD':{ label:'Trade', region:'TRADE' },
+  'CAF':{ label:'Trade', region:'TRADE' }, 'COG':{ label:'Trade', region:'TRADE' },
+  'CIV':{ label:'Trade', region:'TRADE' }, 'CMR':{ label:'Trade', region:'TRADE' },
+  'CPV':{ label:'Trade', region:'TRADE' }, 'DJI':{ label:'Trade', region:'TRADE' },
+  'DZA':{ label:'Trade', region:'TRADE' }, 'EGY':{ label:'Trade', region:'TRADE' },
+  'ESH':{ label:'Trade', region:'TRADE' }, 'ERI':{ label:'Trade', region:'TRADE' },
+  'ETH':{ label:'Trade', region:'TRADE' }, 'GAB':{ label:'Trade', region:'TRADE' },
+  'GHA':{ label:'Trade', region:'TRADE' }, 'GMB':{ label:'Trade', region:'TRADE' },
+  'GIN':{ label:'Trade', region:'TRADE' }, 'GNQ':{ label:'Trade', region:'TRADE' },
+  'GNB':{ label:'Trade', region:'TRADE' }, 'KEN':{ label:'Trade', region:'TRADE' },
+  'COM':{ label:'Trade', region:'TRADE' }, 'LBR':{ label:'Trade', region:'TRADE' },
+  'LSO':{ label:'Trade', region:'TRADE' }, 'LBY':{ label:'Trade', region:'TRADE' },
+  'MAR':{ label:'Trade', region:'TRADE' }, 'MDG':{ label:'Trade', region:'TRADE' },
+  'MLI':{ label:'Trade', region:'TRADE' }, 'MRT':{ label:'Trade', region:'TRADE' },
+  'MUS':{ label:'Trade', region:'TRADE' }, 'MWI':{ label:'Trade', region:'TRADE' },
+  'MOZ':{ label:'Trade', region:'TRADE' }, 'NAM':{ label:'Trade', region:'TRADE' },
+  'NER':{ label:'Trade', region:'TRADE' }, 'NGA':{ label:'Trade', region:'TRADE' },
+  'RWA':{ label:'Trade', region:'TRADE' }, 'SYC':{ label:'Trade', region:'TRADE' },
+  'SDN':{ label:'Trade', region:'TRADE' }, 'SHN':{ label:'Trade', region:'TRADE' },
+  'SLE':{ label:'Trade', region:'TRADE' }, 'SEN':{ label:'Trade', region:'TRADE' },
+  'SOM':{ label:'Trade', region:'TRADE' }, 'SSD':{ label:'Trade', region:'TRADE' },
+  'STP':{ label:'Trade', region:'TRADE' }, 'SWZ':{ label:'Trade', region:'TRADE' },
+  'TCD':{ label:'Trade', region:'TRADE' }, 'TGO':{ label:'Trade', region:'TRADE' },
+  'TUN':{ label:'Trade', region:'TRADE' }, 'TZA':{ label:'Trade', region:'TRADE' },
+  'UGA':{ label:'Trade', region:'TRADE' }, 'ZAF':{ label:'Trade', region:'TRADE' },
+  'ZMB':{ label:'Trade', region:'TRADE' }, 'ZWE':{ label:'Trade', region:'TRADE' },
+  'KAZ':{ label:'Trade', region:'TRADE' }, 'UZB':{ label:'Trade', region:'TRADE' },
+  'TKM':{ label:'Trade', region:'TRADE' }, 'KGZ':{ label:'Trade', region:'TRADE' },
+  'TJK':{ label:'Trade', region:'TRADE' }, 'AFG':{ label:'Trade', region:'TRADE' },
+  'PAK':{ label:'Trade', region:'TRADE' }, 'ISL':{ label:'Trade', region:'TRADE' },
+  'NOR':{ label:'Trade', region:'TRADE' }, 'SWE':{ label:'Trade', region:'TRADE' },
+  'FIN':{ label:'Trade', region:'TRADE' }, 'DNK':{ label:'Trade', region:'TRADE' },
+  'FRO':{ label:'Trade', region:'TRADE' }, 'EST':{ label:'Trade', region:'TRADE' },
+  'LTU':{ label:'Trade', region:'TRADE' }, 'LVA':{ label:'Trade', region:'TRADE' },
+  'BEL':{ label:'Trade', region:'TRADE' }, 'NLD':{ label:'Trade', region:'TRADE' },
+  'LUX':{ label:'Trade', region:'TRADE' }, 'POL':{ label:'Trade', region:'TRADE' },
+  'CZE':{ label:'Trade', region:'TRADE' }, 'SVK':{ label:'Trade', region:'TRADE' },
+  'HUN':{ label:'Trade', region:'TRADE' }, 'UKR':{ label:'Trade', region:'TRADE' },
+  'MDA':{ label:'Trade', region:'TRADE' }, 'ROU':{ label:'Trade', region:'TRADE' },
+  'BGR':{ label:'Trade', region:'TRADE' }, 'SVN':{ label:'Trade', region:'TRADE' },
+  'HRV':{ label:'Trade', region:'TRADE' }, 'BIH':{ label:'Trade', region:'TRADE' },
+  'MNE':{ label:'Trade', region:'TRADE' }, 'SRB':{ label:'Trade', region:'TRADE' },
+  'MKD':{ label:'Trade', region:'TRADE' }, 'ALB':{ label:'Trade', region:'TRADE' },
+  'GRC':{ label:'Trade', region:'TRADE' }, 'CYP':{ label:'Trade', region:'TRADE' },
+  'MLT':{ label:'Trade', region:'TRADE' }
 };
 
+// ── SEO COUNTRY DATA ──
 const ME = {
   'Wood':{'all':true,'subs':{'Cutting':false,'Edging':true,'Drilling':false,'Finishing':false,'Multi-machining':false}},
   'Glass':{'all':true,'subs':{'Cutting':false,'Edging':true,'Drilling':false,'Multi-machining':false}},
@@ -309,7 +380,6 @@ const AUSNZ = {
   'Metal':{'all':true,'subs':{'Cutting':true}},
   'Customer Care':{'all':false,'subs':{'Services':false,'Maintenance':false,'Components':false,'Training':false}}
 };
-
 const TRADE = {
   'Wood':{'all':true,'subs':{'Cutting':false,'Edging':false,'Drilling':true,'Finishing':false,'Multi-machining':true}},
   'Glass':{'all':true,'subs':{'Cutting':false,'Edging':false,'Drilling':false,'Multi-machining':true}},
@@ -368,326 +438,383 @@ const COUNTRIES = {
     'Metal':{'all':false,'subs':{'Cutting':false}},
     'Customer Care':{'all':true,'subs':{'Services':false,'Maintenance':false,'Components':true,'Training':false}}
   }},
-  'TUR':{ iso:'TUR', name:'Turkey',        active: TR    },
-  'AUS':{ iso:'AUS', name:'Australia',     active: AUSNZ },
-  'NZL':{ iso:'NZL', name:'New Zealand',   active: AUSNZ },
-  'SAU':{ iso:'SAU', name:'Saudi Arabia',  active: ME    },
-  'ARE':{ iso:'ARE', name:'UAE',           active: ME    },
-  'QAT':{ iso:'QAT', name:'Qatar',         active: ME    },
-  'KWT':{ iso:'KWT', name:'Kuwait',        active: ME    },
-  'OMN':{ iso:'OMN', name:'Oman',          active: ME    },
-  'BHR':{ iso:'BHR', name:'Bahrain',       active: ME    },
-  'YEM':{ iso:'YEM', name:'Yemen',         active: ME    },
-  'ISR':{ iso:'ISR', name:'Israel',        active: ME    },
-  'JOR':{ iso:'JOR', name:'Jordan',        active: ME    },
-  'LBN':{ iso:'LBN', name:'Lebanon',       active: ME    },
-  'SYR':{ iso:'SYR', name:'Syria',         active: ME    },
-  'PSE':{ iso:'PSE', name:'Palestine',     active: ME    },
-  'IRQ':{ iso:'IRQ', name:'Iraq',          active: ME    },
-  'IRN':{ iso:'IRN', name:'Iran',          active: ME    },
-  'MEX':{ iso:'MEX', name:'Mexico',        active: LATAM },
-  'BRA':{ iso:'BRA', name:'Brazil',        active: LATAM },
-  'ARG':{ iso:'ARG', name:'Argentina',     active: LATAM },
-  'CHL':{ iso:'CHL', name:'Chile',         active: LATAM },
-  'COL':{ iso:'COL', name:'Colombia',      active: LATAM },
-  'PER':{ iso:'PER', name:'Peru',          active: LATAM },
-  'BOL':{ iso:'BOL', name:'Bolivia',       active: LATAM },
-  'ECU':{ iso:'ECU', name:'Ecuador',       active: LATAM },
-  'GUY':{ iso:'GUY', name:'Guyana',        active: LATAM },
-  'PRY':{ iso:'PRY', name:'Paraguay',      active: LATAM },
-  'SUR':{ iso:'SUR', name:'Suriname',      active: LATAM },
-  'URY':{ iso:'URY', name:'Uruguay',       active: LATAM },
-  'VEN':{ iso:'VEN', name:'Venezuela',     active: LATAM },
-  'GTM':{ iso:'GTM', name:'Guatemala',     active: LATAM },
-  'AGO':{ iso:'AGO', name:'AGO', active: TRADE },
-  'BFA':{ iso:'BFA', name:'BFA', active: TRADE },
-  'BDI':{ iso:'BDI', name:'BDI', active: TRADE },
-  'BEN':{ iso:'BEN', name:'BEN', active: TRADE },
-  'BWA':{ iso:'BWA', name:'BWA', active: TRADE },
-  'COD':{ iso:'COD', name:'COD', active: TRADE },
-  'CAF':{ iso:'CAF', name:'CAF', active: TRADE },
-  'COG':{ iso:'COG', name:'COG', active: TRADE },
-  'CIV':{ iso:'CIV', name:'CIV', active: TRADE },
-  'CMR':{ iso:'CMR', name:'CMR', active: TRADE },
-  'CPV':{ iso:'CPV', name:'CPV', active: TRADE },
-  'DJI':{ iso:'DJI', name:'DJI', active: TRADE },
-  'DZA':{ iso:'DZA', name:'DZA', active: TRADE },
-  'EGY':{ iso:'EGY', name:'EGY', active: TRADE },
-  'ESH':{ iso:'ESH', name:'ESH', active: TRADE },
-  'ERI':{ iso:'ERI', name:'ERI', active: TRADE },
-  'ETH':{ iso:'ETH', name:'ETH', active: TRADE },
-  'GAB':{ iso:'GAB', name:'GAB', active: TRADE },
-  'GHA':{ iso:'GHA', name:'GHA', active: TRADE },
-  'GMB':{ iso:'GMB', name:'GMB', active: TRADE },
-  'GIN':{ iso:'GIN', name:'GIN', active: TRADE },
-  'GNQ':{ iso:'GNQ', name:'GNQ', active: TRADE },
-  'GNB':{ iso:'GNB', name:'GNB', active: TRADE },
-  'ISR':{ iso:'ISR', name:'ISR', active: TRADE },
-  'KEN':{ iso:'KEN', name:'KEN', active: TRADE },
-  'COM':{ iso:'COM', name:'COM', active: TRADE },
-  'LBR':{ iso:'LBR', name:'LBR', active: TRADE },
-  'LSO':{ iso:'LSO', name:'LSO', active: TRADE },
-  'LBY':{ iso:'LBY', name:'LBY', active: TRADE },
-  'MAR':{ iso:'MAR', name:'MAR', active: TRADE },
-  'MDG':{ iso:'MDG', name:'MDG', active: TRADE },
-  'MLI':{ iso:'MLI', name:'MLI', active: TRADE },
-  'MRT':{ iso:'MRT', name:'MRT', active: TRADE },
-  'MUS':{ iso:'MUS', name:'MUS', active: TRADE },
-  'MWI':{ iso:'MWI', name:'MWI', active: TRADE },
-  'MOZ':{ iso:'MOZ', name:'MOZ', active: TRADE },
-  'NAM':{ iso:'NAM', name:'NAM', active: TRADE },
-  'NER':{ iso:'NER', name:'NER', active: TRADE },
-  'NGA':{ iso:'NGA', name:'NGA', active: TRADE },
-  'RWA':{ iso:'RWA', name:'RWA', active: TRADE },
-  'SYC':{ iso:'SYC', name:'SYC', active: TRADE },
-  'SDN':{ iso:'SDN', name:'SDN', active: TRADE },
-  'SHN':{ iso:'SHN', name:'SHN', active: TRADE },
-  'SLE':{ iso:'SLE', name:'SLE', active: TRADE },
-  'SEN':{ iso:'SEN', name:'SEN', active: TRADE },
-  'SOM':{ iso:'SOM', name:'SOM', active: TRADE },
-  'SSD':{ iso:'SSD', name:'SSD', active: TRADE },
-  'STP':{ iso:'STP', name:'STP', active: TRADE },
-  'SWZ':{ iso:'SWZ', name:'SWZ', active: TRADE },
-  'TCD':{ iso:'TCD', name:'TCD', active: TRADE },
-  'TGO':{ iso:'TGO', name:'TGO', active: TRADE },
-  'TUN':{ iso:'TUN', name:'TUN', active: TRADE },
-  'TZA':{ iso:'TZA', name:'TZA', active: TRADE },
-  'UGA':{ iso:'UGA', name:'UGA', active: TRADE },
-  'ZAF':{ iso:'ZAF', name:'ZAF', active: TRADE },
-  'ZMB':{ iso:'ZMB', name:'ZMB', active: TRADE },
-  'ZWE':{ iso:'ZWE', name:'ZWE', active: TRADE },
-  'KAZ':{ iso:'KAZ', name:'KAZ', active: TRADE },
-  'UZB':{ iso:'UZB', name:'UZB', active: TRADE },
-  'TKM':{ iso:'TKM', name:'TKM', active: TRADE },
-  'KGZ':{ iso:'KGZ', name:'KGZ', active: TRADE },
-  'TJK':{ iso:'TJK', name:'TJK', active: TRADE },
-  'AFG':{ iso:'AFG', name:'AFG', active: TRADE },
-  'PAK':{ iso:'PAK', name:'PAK', active: TRADE },
-  'ISL':{ iso:'ISL', name:'ISL', active: TRADE },
-  'NOR':{ iso:'NOR', name:'NOR', active: TRADE },
-  'SWE':{ iso:'SWE', name:'SWE', active: TRADE },
-  'FIN':{ iso:'FIN', name:'FIN', active: TRADE },
-  'DNK':{ iso:'DNK', name:'DNK', active: TRADE },
-  'FRO':{ iso:'FRO', name:'FRO', active: TRADE },
-  'EST':{ iso:'EST', name:'EST', active: TRADE },
-  'LTU':{ iso:'LTU', name:'LTU', active: TRADE },
-  'LVA':{ iso:'LVA', name:'LVA', active: TRADE },
-  'BEL':{ iso:'BEL', name:'BEL', active: TRADE },
-  'NLD':{ iso:'NLD', name:'NLD', active: TRADE },
-  'LUX':{ iso:'LUX', name:'LUX', active: TRADE },
-  'POL':{ iso:'POL', name:'POL', active: TRADE },
-  'CZE':{ iso:'CZE', name:'CZE', active: TRADE },
-  'SVK':{ iso:'SVK', name:'SVK', active: TRADE },
-  'HUN':{ iso:'HUN', name:'HUN', active: TRADE },
-  'UKR':{ iso:'UKR', name:'UKR', active: TRADE },
-  'MDA':{ iso:'MDA', name:'MDA', active: TRADE },
-  'ROU':{ iso:'ROU', name:'ROU', active: TRADE },
-  'BGR':{ iso:'BGR', name:'BGR', active: TRADE },
-  'SVN':{ iso:'SVN', name:'SVN', active: TRADE },
-  'HRV':{ iso:'HRV', name:'HRV', active: TRADE },
-  'BIH':{ iso:'BIH', name:'BIH', active: TRADE },
-  'MNE':{ iso:'MNE', name:'MNE', active: TRADE },
-  'SRB':{ iso:'SRB', name:'SRB', active: TRADE },
-  'MKD':{ iso:'MKD', name:'MKD', active: TRADE },
-  'ALB':{ iso:'ALB', name:'ALB', active: TRADE },
-  'GRC':{ iso:'GRC', name:'GRC', active: TRADE },
-  'CYP':{ iso:'CYP', name:'CYP', active: TRADE },
-  'MLT':{ iso:'MLT', name:'MLT', active: TRADE },
-  'BLZ':{ iso:'BLZ', name:'Belize',        active: LATAM },
-  'SLV':{ iso:'SLV', name:'El Salvador',   active: LATAM },
-  'HND':{ iso:'HND', name:'Honduras',      active: LATAM },
-  'NIC':{ iso:'NIC', name:'Nicaragua',     active: LATAM },
-  'CRI':{ iso:'CRI', name:'Costa Rica',    active: LATAM },
-  'PAN':{ iso:'PAN', name:'Panama',        active: LATAM }
+  'TUR':{ iso:'TUR', name:'Turkey',       active: TR    },
+  'AUS':{ iso:'AUS', name:'Australia',    active: AUSNZ },
+  'NZL':{ iso:'NZL', name:'New Zealand',  active: AUSNZ },
+  'SAU':{ iso:'SAU', name:'Saudi Arabia', active: ME    },
+  'ARE':{ iso:'ARE', name:'UAE',          active: ME    },
+  'QAT':{ iso:'QAT', name:'Qatar',        active: ME    },
+  'KWT':{ iso:'KWT', name:'Kuwait',       active: ME    },
+  'OMN':{ iso:'OMN', name:'Oman',         active: ME    },
+  'BHR':{ iso:'BHR', name:'Bahrain',      active: ME    },
+  'YEM':{ iso:'YEM', name:'Yemen',        active: ME    },
+  'ISR':{ iso:'ISR', name:'Israel',       active: ME    },
+  'JOR':{ iso:'JOR', name:'Jordan',       active: ME    },
+  'LBN':{ iso:'LBN', name:'Lebanon',      active: ME    },
+  'SYR':{ iso:'SYR', name:'Syria',        active: ME    },
+  'PSE':{ iso:'PSE', name:'Palestine',    active: ME    },
+  'IRQ':{ iso:'IRQ', name:'Iraq',         active: ME    },
+  'IRN':{ iso:'IRN', name:'Iran',         active: ME    },
+  'MEX':{ iso:'MEX', name:'Mexico',       active: LATAM },
+  'BRA':{ iso:'BRA', name:'Brazil',       active: LATAM },
+  'ARG':{ iso:'ARG', name:'Argentina',    active: LATAM },
+  'CHL':{ iso:'CHL', name:'Chile',        active: LATAM },
+  'COL':{ iso:'COL', name:'Colombia',     active: LATAM },
+  'PER':{ iso:'PER', name:'Peru',         active: LATAM },
+  'BOL':{ iso:'BOL', name:'Bolivia',      active: LATAM },
+  'ECU':{ iso:'ECU', name:'Ecuador',      active: LATAM },
+  'GUY':{ iso:'GUY', name:'Guyana',       active: LATAM },
+  'PRY':{ iso:'PRY', name:'Paraguay',     active: LATAM },
+  'SUR':{ iso:'SUR', name:'Suriname',     active: LATAM },
+  'URY':{ iso:'URY', name:'Uruguay',      active: LATAM },
+  'VEN':{ iso:'VEN', name:'Venezuela',    active: LATAM },
+  'GTM':{ iso:'GTM', name:'Guatemala',    active: LATAM },
+  'BLZ':{ iso:'BLZ', name:'Belize',       active: LATAM },
+  'SLV':{ iso:'SLV', name:'El Salvador',  active: LATAM },
+  'HND':{ iso:'HND', name:'Honduras',     active: LATAM },
+  'NIC':{ iso:'NIC', name:'Nicaragua',    active: LATAM },
+  'CRI':{ iso:'CRI', name:'Costa Rica',   active: LATAM },
+  'PAN':{ iso:'PAN', name:'Panama',       active: LATAM },
+  'AGO':{ iso:'AGO', name:'Angola',              active: TRADE },
+  'BFA':{ iso:'BFA', name:'Burkina Faso',         active: TRADE },
+  'BDI':{ iso:'BDI', name:'Burundi',              active: TRADE },
+  'BEN':{ iso:'BEN', name:'Benin',                active: TRADE },
+  'BWA':{ iso:'BWA', name:'Botswana',             active: TRADE },
+  'COD':{ iso:'COD', name:'DR Congo',             active: TRADE },
+  'CAF':{ iso:'CAF', name:'Central African Rep.', active: TRADE },
+  'COG':{ iso:'COG', name:'Republic of Congo',    active: TRADE },
+  'CIV':{ iso:'CIV', name:"Côte d'Ivoire",        active: TRADE },
+  'CMR':{ iso:'CMR', name:'Cameroon',             active: TRADE },
+  'CPV':{ iso:'CPV', name:'Cape Verde',           active: TRADE },
+  'DJI':{ iso:'DJI', name:'Djibouti',             active: TRADE },
+  'DZA':{ iso:'DZA', name:'Algeria',              active: TRADE },
+  'EGY':{ iso:'EGY', name:'Egypt',                active: TRADE },
+  'ESH':{ iso:'ESH', name:'Western Sahara',       active: TRADE },
+  'ERI':{ iso:'ERI', name:'Eritrea',              active: TRADE },
+  'ETH':{ iso:'ETH', name:'Ethiopia',             active: TRADE },
+  'GAB':{ iso:'GAB', name:'Gabon',                active: TRADE },
+  'GHA':{ iso:'GHA', name:'Ghana',                active: TRADE },
+  'GMB':{ iso:'GMB', name:'Gambia',               active: TRADE },
+  'GIN':{ iso:'GIN', name:'Guinea',               active: TRADE },
+  'GNQ':{ iso:'GNQ', name:'Equatorial Guinea',    active: TRADE },
+  'GNB':{ iso:'GNB', name:'Guinea-Bissau',        active: TRADE },
+  'KEN':{ iso:'KEN', name:'Kenya',                active: TRADE },
+  'COM':{ iso:'COM', name:'Comoros',              active: TRADE },
+  'LBR':{ iso:'LBR', name:'Liberia',              active: TRADE },
+  'LSO':{ iso:'LSO', name:'Lesotho',              active: TRADE },
+  'LBY':{ iso:'LBY', name:'Libya',                active: TRADE },
+  'MAR':{ iso:'MAR', name:'Morocco',              active: TRADE },
+  'MDG':{ iso:'MDG', name:'Madagascar',           active: TRADE },
+  'MLI':{ iso:'MLI', name:'Mali',                 active: TRADE },
+  'MRT':{ iso:'MRT', name:'Mauritania',           active: TRADE },
+  'MUS':{ iso:'MUS', name:'Mauritius',            active: TRADE },
+  'MWI':{ iso:'MWI', name:'Malawi',               active: TRADE },
+  'MOZ':{ iso:'MOZ', name:'Mozambique',           active: TRADE },
+  'NAM':{ iso:'NAM', name:'Namibia',              active: TRADE },
+  'NER':{ iso:'NER', name:'Niger',                active: TRADE },
+  'NGA':{ iso:'NGA', name:'Nigeria',              active: TRADE },
+  'RWA':{ iso:'RWA', name:'Rwanda',               active: TRADE },
+  'SYC':{ iso:'SYC', name:'Seychelles',           active: TRADE },
+  'SDN':{ iso:'SDN', name:'Sudan',                active: TRADE },
+  'SHN':{ iso:'SHN', name:'Saint Helena',         active: TRADE },
+  'SLE':{ iso:'SLE', name:'Sierra Leone',         active: TRADE },
+  'SEN':{ iso:'SEN', name:'Senegal',              active: TRADE },
+  'SOM':{ iso:'SOM', name:'Somalia',              active: TRADE },
+  'SSD':{ iso:'SSD', name:'South Sudan',          active: TRADE },
+  'STP':{ iso:'STP', name:'São Tomé and Príncipe',active: TRADE },
+  'SWZ':{ iso:'SWZ', name:'Eswatini',             active: TRADE },
+  'TCD':{ iso:'TCD', name:'Chad',                 active: TRADE },
+  'TGO':{ iso:'TGO', name:'Togo',                 active: TRADE },
+  'TUN':{ iso:'TUN', name:'Tunisia',              active: TRADE },
+  'TZA':{ iso:'TZA', name:'Tanzania',             active: TRADE },
+  'UGA':{ iso:'UGA', name:'Uganda',               active: TRADE },
+  'ZAF':{ iso:'ZAF', name:'South Africa',         active: TRADE },
+  'ZMB':{ iso:'ZMB', name:'Zambia',               active: TRADE },
+  'ZWE':{ iso:'ZWE', name:'Zimbabwe',             active: TRADE },
+  'KAZ':{ iso:'KAZ', name:'Kazakhstan',           active: TRADE },
+  'UZB':{ iso:'UZB', name:'Uzbekistan',           active: TRADE },
+  'TKM':{ iso:'TKM', name:'Turkmenistan',         active: TRADE },
+  'KGZ':{ iso:'KGZ', name:'Kyrgyzstan',           active: TRADE },
+  'TJK':{ iso:'TJK', name:'Tajikistan',           active: TRADE },
+  'AFG':{ iso:'AFG', name:'Afghanistan',          active: TRADE },
+  'PAK':{ iso:'PAK', name:'Pakistan',             active: TRADE },
+  'ISL':{ iso:'ISL', name:'Iceland',              active: TRADE },
+  'NOR':{ iso:'NOR', name:'Norway',               active: TRADE },
+  'SWE':{ iso:'SWE', name:'Sweden',               active: TRADE },
+  'FIN':{ iso:'FIN', name:'Finland',              active: TRADE },
+  'DNK':{ iso:'DNK', name:'Denmark',              active: TRADE },
+  'FRO':{ iso:'FRO', name:'Faroe Islands',        active: TRADE },
+  'EST':{ iso:'EST', name:'Estonia',              active: TRADE },
+  'LTU':{ iso:'LTU', name:'Lithuania',            active: TRADE },
+  'LVA':{ iso:'LVA', name:'Latvia',               active: TRADE },
+  'BEL':{ iso:'BEL', name:'Belgium',              active: TRADE },
+  'NLD':{ iso:'NLD', name:'Netherlands',          active: TRADE },
+  'LUX':{ iso:'LUX', name:'Luxembourg',           active: TRADE },
+  'POL':{ iso:'POL', name:'Poland',               active: TRADE },
+  'CZE':{ iso:'CZE', name:'Czech Republic',       active: TRADE },
+  'SVK':{ iso:'SVK', name:'Slovakia',             active: TRADE },
+  'HUN':{ iso:'HUN', name:'Hungary',              active: TRADE },
+  'UKR':{ iso:'UKR', name:'Ukraine',              active: TRADE },
+  'MDA':{ iso:'MDA', name:'Moldova',              active: TRADE },
+  'ROU':{ iso:'ROU', name:'Romania',              active: TRADE },
+  'BGR':{ iso:'BGR', name:'Bulgaria',             active: TRADE },
+  'SVN':{ iso:'SVN', name:'Slovenia',             active: TRADE },
+  'HRV':{ iso:'HRV', name:'Croatia',              active: TRADE },
+  'BIH':{ iso:'BIH', name:'Bosnia Herzegovina',   active: TRADE },
+  'MNE':{ iso:'MNE', name:'Montenegro',           active: TRADE },
+  'SRB':{ iso:'SRB', name:'Serbia',               active: TRADE },
+  'MKD':{ iso:'MKD', name:'North Macedonia',      active: TRADE },
+  'ALB':{ iso:'ALB', name:'Albania',              active: TRADE },
+  'GRC':{ iso:'GRC', name:'Greece',               active: TRADE },
+  'CYP':{ iso:'CYP', name:'Cyprus',               active: TRADE },
+  'MLT':{ iso:'MLT', name:'Malta',                active: TRADE }
 };
 
-// Dropdown options: one entry per unique area/country
+// ── MODAL ENTRIES ──
 const MODAL_ENTRIES = [
-  { key:'USA',    label:'United States',  iso:'USA'  },
-  { key:'CAN',    label:'Canada',         iso:'CAN'  },
-  { key:'IND',    label:'India',          iso:'IND'  },
-  { key:'GBR',    label:'United Kingdom', iso:'GBR'  },
-  { key:'FRA',    label:'France',         iso:'FRA'  },
-  { key:'TUR',    label:'Turkey',         iso:'TUR'  },
-  { key:'ME',     label:'Middle East',    iso:'SAU'  },
-  { key:'LATAM',  label:'Latam',          iso:'MEX'  },
-  { key:'AUSNZ',  label:'Australia & NZ', iso:'AUS'  },
-  { key:'TRADE',  label:'Trade',          iso:'AGO'  }
+  { key:'USA',   label:'United States',  iso:'USA' },
+  { key:'CAN',   label:'Canada',         iso:'CAN' },
+  { key:'IND',   label:'India',          iso:'IND' },
+  { key:'GBR',   label:'United Kingdom', iso:'GBR' },
+  { key:'ITA',   label:'Italy',          iso:'ITA' },
+  { key:'FRA',   label:'France',         iso:'FRA' },
+  { key:'TUR',   label:'Turkey',         iso:'TUR' },
+  { key:'ME',    label:'Middle East',    iso:'SAU' },
+  { key:'LATAM', label:'Latam',          iso:'MEX' },
+  { key:'AUSNZ', label:'Australia & NZ', iso:'AUS' },
+  { key:'TRADE', label:'Trade',          iso:'AGO' },
+  { key:'DACH',  label:'DACH',           iso:'DEU' }
 ];
 
-let currentGroup = 'Wood';
-let currentSub   = null;
+// ── STATE ──
+let currentGroup   = 'Wood';
+let currentSub     = null;
+let currentProduct = null;
+let currentView    = 'seo';
+let currentMonth   = null;
+const MONTHS_ORDER = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-const tabsEl      = document.getElementById('tabs');
-const subFilters  = document.getElementById('sub-filters');
-const subtitleEl  = document.getElementById('subtitle');
-const pillsEl     = document.getElementById('country-pills');
-const tooltipEl   = document.getElementById('tooltip');
-const legendDot   = document.getElementById('legend-active-dot');
-const legendLbl   = document.getElementById('legend-active-label');
-const modalOverlay= document.getElementById('modal-overlay');
-const modalTitle  = document.getElementById('modal-title');
-const modalBody   = document.getElementById('modal-body');
-const modalClose  = document.getElementById('modal-close');
-const countrySelect = document.getElementById('country-select');
+// ── DOM REFS ──
+const tabsEl       = document.getElementById('tabs');
+const subFilters   = document.getElementById('sub-filters');
+const prodFilters  = document.getElementById('prod-filters');
+const subtitleEl   = document.getElementById('subtitle');
+const pillsEl      = document.getElementById('country-pills');
+const tooltipEl    = document.getElementById('tooltip');
+const legendDot    = document.getElementById('legend-active-dot');
+const legendLbl    = document.getElementById('legend-active-label');
+const modalOverlay = document.getElementById('modal-overlay');
+const modalTitle   = document.getElementById('modal-title');
+const modalBody    = document.getElementById('modal-body');
+const modalClose   = document.getElementById('modal-close');
+const countrySelect= document.getElementById('country-select');
+const monthFilters = document.getElementById('month-filters');
 
-// Populate dropdown
+// ── DROPDOWN ──
 MODAL_ENTRIES.forEach(function(e) {
   const opt = document.createElement('option');
-  opt.value = e.iso;
-  opt.textContent = e.label;
+  opt.value = e.iso; opt.textContent = e.label;
   countrySelect.appendChild(opt);
 });
-
 countrySelect.addEventListener('change', function() {
   if (this.value) { openModal(this.value); this.value = ''; }
 });
 
+// ── HELPERS ──
 function solidColor(g) { return GROUPS[g].solidColor || GROUPS[g].color; }
 
 function isCountryActive(iso3) {
+  if (currentView === 'paid') {
+    const c = PAID_COUNTRIES[iso3];
+    if (!c) return false;
+    const gdata = c.active[currentGroup];
+    if (!gdata || !gdata.all) return false;
+    if (currentSub) {
+      const sdata = gdata.subs && gdata.subs[currentSub];
+      if (!sdata || !sdata.active) return false;
+      return currentMonth ? sdata.months.includes(currentMonth) : true;
+    }
+    return currentMonth ? gdata.months.includes(currentMonth) : true;
+  }
   const c = COUNTRIES[iso3];
   if (!c) return false;
   const gdata = c.active[currentGroup];
   if (!gdata) return false;
+  if (currentProduct) {
+    var pushed = PUSHED_PRODUCTS[iso3];
+    if (!pushed) return false;
+    var gp = pushed[currentGroup]; if (!gp) return false;
+    var sp = gp[currentSub]; if (!sp) return false;
+    return sp.includes(currentProduct);
+  }
   if (currentSub) return gdata.subs[currentSub] === true;
   return gdata.all;
 }
 
-function isClickable(iso3) {
-  return !!COUNTRIES[iso3];
-}
-
 function getActiveCountries() {
-  return Object.values(COUNTRIES).filter(c => isCountryActive(c.iso));
+  var src = currentView === 'paid' ? PAID_COUNTRIES : COUNTRIES;
+  return Object.values(src).filter(function(c) { return isCountryActive(c.iso); });
 }
 
-// MODAL
+function isProductPushed(prod) {
+  return Object.values(PUSHED_PRODUCTS).some(function(cd) {
+    return Object.values(cd).some(function(ld) {
+      return Object.values(ld).some(function(pl) { return pl.includes(prod); });
+    });
+  });
+}
+
+// ── MONTH FILTERS ──
+function buildMonthFilters() {
+  monthFilters.querySelectorAll('.month-btn').forEach(function(b) { b.remove(); });
+  if (currentView !== 'paid') { monthFilters.classList.remove('visible'); return; }
+  monthFilters.classList.add('visible');
+  MONTHS_ORDER.forEach(function(m) {
+    var btn = document.createElement('button');
+    btn.className = 'month-btn' + (m === currentMonth ? ' active' : '');
+    btn.textContent = m; btn.dataset.month = m;
+    btn.addEventListener('click', function() {
+      currentMonth = currentMonth === m ? null : m;
+      buildMonthFilters(); updateSubtitle(); updateMap();
+    });
+    monthFilters.appendChild(btn);
+  });
+}
+
+// ── MODAL ──
 function openModal(iso3) {
-  const c = COUNTRIES[iso3];
+  var c = currentView === 'paid' ? (PAID_COUNTRIES[iso3] || COUNTRIES[iso3]) : COUNTRIES[iso3];
   if (!c) return;
   const rl = REGION_LABEL[iso3];
-  const displayName = rl ? rl.label : c.name;
-  modalTitle.textContent = displayName;
+  modalTitle.textContent = rl ? rl.label : c.name;
   modalBody.innerHTML = '';
-
   Object.keys(GROUPS).forEach(function(g) {
     const gdata = c.active[g];
     const isActive = gdata && gdata.all;
-    const activeSubs = isActive ? Object.entries(gdata.subs).filter(([k,v]) => v).map(([k]) => k) : [];
+    var activeSubs = [];
+    if (isActive && gdata.subs) {
+      if (currentView === 'paid') {
+        activeSubs = Object.entries(gdata.subs).filter(function(e) { return e[1] && e[1].active; }).map(function(e) { return e[0]; });
+      } else {
+        activeSubs = Object.entries(gdata.subs).filter(function(e) { return e[1] === true; }).map(function(e) { return e[0]; });
+      }
+    }
     const col = GROUPS[g].dotPattern ? '#888780' : GROUPS[g].dotBg;
-
     const div = document.createElement('div');
     div.className = 'modal-group' + (isActive ? '' : ' modal-inactive');
-
-    const header = document.createElement('div');
-    header.className = 'modal-group-header';
-    const dot = document.createElement('span');
-    dot.className = 'modal-group-dot';
+    const header = document.createElement('div'); header.className = 'modal-group-header';
+    const dot = document.createElement('span'); dot.className = 'modal-group-dot';
     if (isActive) {
-      if (GROUPS[g].dotPattern) {
-        dot.style.cssText = 'width:9px;height:9px;border-radius:50%;background:repeating-linear-gradient(45deg,#bbb 0px,#bbb 1px,#e8e6e0 1px,#e8e6e0 3px);border:0.5px solid #999;flex-shrink:0;';
-      } else {
-        dot.style.background = col;
-      }
+      if (GROUPS[g].dotPattern) { dot.style.cssText = 'width:9px;height:9px;border-radius:50%;background:repeating-linear-gradient(45deg,#bbb 0px,#bbb 1px,#e8e6e0 1px,#e8e6e0 3px);border:0.5px solid #999;flex-shrink:0;'; }
+      else { dot.style.background = col; }
     }
-    const name = document.createElement('span');
-    name.className = 'modal-group-name';
-    name.textContent = g;
-    header.appendChild(dot);
-    header.appendChild(name);
-    div.appendChild(header);
-
+    const name = document.createElement('span'); name.className = 'modal-group-name'; name.textContent = g;
+    header.appendChild(dot); header.appendChild(name); div.appendChild(header);
     if (isActive) {
       if (activeSubs.length > 0) {
-        const subsDiv = document.createElement('div');
-        subsDiv.className = 'modal-subs';
+        const sd = document.createElement('div'); sd.className = 'modal-subs';
         activeSubs.forEach(function(s) {
-          const tag = document.createElement('span');
-          tag.className = 'modal-sub';
-          tag.style.background = col;
-          tag.textContent = s;
-          subsDiv.appendChild(tag);
+          const t = document.createElement('span'); t.className = 'modal-sub'; t.style.background = col; t.textContent = s; sd.appendChild(t);
         });
-        div.appendChild(subsDiv);
+        div.appendChild(sd);
       } else {
-        const none = document.createElement('div');
-        none.className = 'modal-none';
-        none.textContent = 'nessuna lavorazione specifica';
-        div.appendChild(none);
+        const n = document.createElement('div'); n.className = 'modal-none'; n.textContent = 'nessuna lavorazione specifica'; div.appendChild(n);
       }
     }
-
     modalBody.appendChild(div);
   });
-
   modalOverlay.classList.add('visible');
 }
-
-function closeModal() {
-  modalOverlay.classList.remove('visible');
-}
-
+function closeModal() { modalOverlay.classList.remove('visible'); }
 modalClose.addEventListener('click', closeModal);
 modalOverlay.addEventListener('click', function(e) { if (e.target === modalOverlay) closeModal(); });
 
+// ── UPDATE FUNCTIONS ──
 function updateSubtitle() {
   const active = getActiveCountries();
   const col = GROUPS[currentGroup].dotPattern ? '#888780' : GROUPS[currentGroup].color;
   pillsEl.innerHTML = '';
-  const seenRegions = new Set();
-  const pills = [];
+  const seenRegions = new Set(); const pills = [];
   active.forEach(function(c) {
     const rl = REGION_LABEL[c.iso];
-    if (rl) {
-      if (!seenRegions.has(rl.region)) { seenRegions.add(rl.region); pills.push(rl.label); }
-    } else { pills.push(c.name); }
+    if (rl) { if (!seenRegions.has(rl.region)) { seenRegions.add(rl.region); pills.push(rl.label); } }
+    else { pills.push(c.name); }
   });
   const n = pills.length;
   const label = currentSub ? currentGroup + ' › ' + currentSub : currentGroup;
   subtitleEl.textContent = label + ' — ' + n + (n === 1 ? ' area attiva' : ' aree attive');
   if (n === 0) {
-    const empty = document.createElement('span');
-    empty.style.cssText = 'font-size:12px;color:#888;font-style:italic;';
-    empty.textContent = 'Nessuna area selezionata';
-    pillsEl.appendChild(empty);
+    const e = document.createElement('span'); e.style.cssText = 'font-size:12px;color:#888;font-style:italic;'; e.textContent = 'Nessuna area selezionata'; pillsEl.appendChild(e);
   } else {
     pills.forEach(function(p) {
-      const pill = document.createElement('span');
-      pill.className = 'country-pill';
-      pill.style.background = col;
-      pill.textContent = p;
-      pillsEl.appendChild(pill);
+      const pill = document.createElement('span'); pill.className = 'country-pill'; pill.style.background = col; pill.textContent = p; pillsEl.appendChild(pill);
     });
   }
 }
 
 function updateLegend() {
-  if (GROUPS[currentGroup].dotPattern) {
-    legendDot.style.cssText = 'width:10px;height:10px;border-radius:50%;background:repeating-linear-gradient(45deg,#bbb 0px,#bbb 1px,#e8e6e0 1px,#e8e6e0 3px);border:0.5px solid #999;';
-  } else {
-    legendDot.style.cssText = 'width:10px;height:10px;border-radius:50%;background:' + GROUPS[currentGroup].dotBg + ';';
-  }
+  if (GROUPS[currentGroup].dotPattern) { legendDot.style.cssText = 'width:10px;height:10px;border-radius:50%;background:repeating-linear-gradient(45deg,#bbb 0px,#bbb 1px,#e8e6e0 1px,#e8e6e0 3px);border:0.5px solid #999;'; }
+  else { legendDot.style.cssText = 'width:10px;height:10px;border-radius:50%;background:' + GROUPS[currentGroup].dotBg + ';'; }
   legendLbl.textContent = (currentSub || currentGroup) + ' attivo';
 }
 
 function updateMap() {
   d3.selectAll('.country')
     .attr('fill', function() { return isCountryActive(this.dataset.iso3) ? GROUPS[currentGroup].color : INACTIVE; })
-    .classed('clickable', function() { return isClickable(this.dataset.iso3); });
+    .classed('clickable', function() { return !!(COUNTRIES[this.dataset.iso3] || PAID_COUNTRIES[this.dataset.iso3]); });
+}
+
+function hasActiveCountriesForSub(sub) {
+  var src = currentView === 'paid' ? PAID_COUNTRIES : COUNTRIES;
+  return Object.values(src).some(function(c) {
+    var gdata = c.active[currentGroup];
+    if (!gdata) return false;
+    if (currentView === 'paid') {
+      var sdata = gdata.subs && gdata.subs[sub];
+      return sdata && sdata.active;
+    }
+    return gdata.subs && gdata.subs[sub] === true;
+  });
 }
 
 function updateSubBtns() {
   subFilters.querySelectorAll('.sub-btn').forEach(function(b) {
     const on = b.dataset.sub === currentSub;
+    const hasSub = hasActiveCountriesForSub(b.dataset.sub);
     b.classList.toggle('active', on);
-    if (on) {
-      b.style.background = solidColor(currentGroup);
-      b.style.borderColor = solidColor(currentGroup);
-      b.style.color = '#fff';
-    } else {
-      b.style.background = ''; b.style.borderColor = ''; b.style.color = '';
-    }
+    if (on) { b.style.background = solidColor(currentGroup); b.style.borderColor = solidColor(currentGroup); b.style.color = '#fff'; }
+    else if (hasSub) { b.style.background = ''; b.style.borderColor = solidColor(currentGroup); b.style.color = solidColor(currentGroup); }
+    else { b.style.background = ''; b.style.borderColor = ''; b.style.color = ''; }
+  });
+}
+
+function buildProdFilters(g, sub) {
+  prodFilters.querySelectorAll('.prod-btn').forEach(function(b) { b.remove(); });
+  currentProduct = null;
+  if (!sub || !PRODUCTS[g] || !PRODUCTS[g][sub]) { prodFilters.classList.remove('visible'); return; }
+  prodFilters.classList.add('visible');
+  PRODUCTS[g][sub].forEach(function(p) {
+    var btn = document.createElement('button');
+    btn.className = 'prod-btn'; btn.textContent = p; btn.dataset.prod = p;
+    var pushed = isProductPushed(p);
+    if (pushed) { btn.style.borderColor = solidColor(g); btn.style.color = solidColor(g); }
+    btn.addEventListener('click', function() {
+      currentProduct = currentProduct === p ? null : p;
+      updateProdBtns(); updateSubtitle(); updateMap();
+    });
+    prodFilters.appendChild(btn);
+  });
+  updateProdBtns();
+}
+
+function updateProdBtns() {
+  prodFilters.querySelectorAll('.prod-btn').forEach(function(b) {
+    const on = b.dataset.prod === currentProduct;
+    const pushed = isProductPushed(b.dataset.prod);
+    b.classList.toggle('active', on);
+    if (on) { b.style.background = solidColor(currentGroup); b.style.borderColor = solidColor(currentGroup); b.style.color = '#fff'; }
+    else if (pushed) { b.style.background = ''; b.style.borderColor = solidColor(currentGroup); b.style.color = solidColor(currentGroup); }
+    else { b.style.background = ''; b.style.borderColor = ''; b.style.color = ''; }
   });
 }
 
@@ -701,6 +828,7 @@ function buildSubFilters(g) {
     btn.className = 'sub-btn'; btn.textContent = s; btn.dataset.sub = s;
     btn.addEventListener('click', function() {
       currentSub = currentSub === s ? null : s;
+      buildProdFilters(currentGroup, currentSub);
       updateSubBtns(); updateSubtitle(); updateLegend(); updateMap();
     });
     subFilters.appendChild(btn);
@@ -709,28 +837,39 @@ function buildSubFilters(g) {
 }
 
 function setGroup(g) {
-  currentGroup = g; currentSub = null;
+  currentGroup = g; currentSub = null; currentProduct = null;
   tabsEl.querySelectorAll('.tab-btn').forEach(function(b) {
     const on = b.dataset.group === g;
     b.classList.toggle('active', on);
     b.style.borderColor = on ? solidColor(g) : '';
     b.style.color = on ? solidColor(g) : '';
   });
-  buildSubFilters(g); updateSubtitle(); updateLegend(); updateMap();
+  buildSubFilters(g); buildProdFilters(g, null); updateSubtitle(); updateLegend(); updateMap();
 }
 
+function setView(view) {
+  currentView = view; currentSub = null; currentProduct = null; currentMonth = null;
+  document.getElementById('btn-seo').classList.toggle('active', view === 'seo');
+  document.getElementById('btn-paid').classList.toggle('active', view === 'paid');
+  buildMonthFilters();
+  buildSubFilters(currentGroup);
+  buildProdFilters(currentGroup, null);
+  updateSubtitle(); updateLegend(); updateMap();
+}
+
+// ── BUILD TABS ──
 Object.keys(GROUPS).forEach(function(g) {
   const btn = document.createElement('button');
   btn.className = 'tab-btn'; btn.dataset.group = g;
   const dot = document.createElement('span'); dot.className = 'dot';
-  if (GROUPS[g].dotPattern) {
-    dot.style.cssText = 'background:repeating-linear-gradient(45deg,#bbb 0px,#bbb 1px,#e8e6e0 1px,#e8e6e0 3px);border:0.5px solid #999;';
-  } else { dot.style.background = GROUPS[g].dotBg; }
+  if (GROUPS[g].dotPattern) { dot.style.cssText = 'background:repeating-linear-gradient(45deg,#bbb 0px,#bbb 1px,#e8e6e0 1px,#e8e6e0 3px);border:0.5px solid #999;'; }
+  else { dot.style.background = GROUPS[g].dotBg; }
   btn.appendChild(dot); btn.appendChild(document.createTextNode(g));
   btn.addEventListener('click', function() { setGroup(g); });
   tabsEl.appendChild(btn);
 });
 
+// ── ISO MAP ──
 const ISO_MAP = {
   '840':'USA', '124':'CAN', '484':'MEX', '032':'ARG', '076':'BRA',
   '152':'CHL', '170':'COL', '604':'PER', '068':'BOL', '218':'ECU',
@@ -766,6 +905,7 @@ const ISO_MAP = {
   '458':'MYS', '608':'PHL', '702':'SGP'
 };
 
+// ── MAP INIT ──
 const svg  = d3.select('#world-map');
 const proj = d3.geoNaturalEarth1().scale(170).translate([500, 280]);
 const path = d3.geoPath().projection(proj);
@@ -786,18 +926,18 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
       })
       .on('mousemove', function(event) {
         const iso3 = this.dataset.iso3;
-        if (!COUNTRIES[iso3]) return;
+        const c = COUNTRIES[iso3] || PAID_COUNTRIES[iso3];
+        if (!c) return;
         tooltipEl.style.display = 'block';
         tooltipEl.style.left = (event.clientX + 12) + 'px';
         tooltipEl.style.top  = (event.clientY - 28) + 'px';
         const rl = REGION_LABEL[iso3];
-        const displayName = rl ? rl.label : COUNTRIES[iso3].name;
-        tooltipEl.textContent = displayName + ' — clicca per dettagli';
+        tooltipEl.textContent = (rl ? rl.label : c.name) + ' — clicca per dettagli';
       })
       .on('mouseleave', function() { tooltipEl.style.display = 'none'; })
       .on('click', function() {
         const iso3 = this.dataset.iso3;
-        if (COUNTRIES[iso3]) openModal(iso3);
+        if (COUNTRIES[iso3] || PAID_COUNTRIES[iso3]) openModal(iso3);
       });
     setGroup('Wood');
   });
