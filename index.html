@@ -316,6 +316,7 @@ const REGION_LABEL = {
   'HND':{ label:'Latam', region:'LATAM' }, 'NIC':{ label:'Latam', region:'LATAM' },
   'CRI':{ label:'Latam', region:'LATAM' }, 'PAN':{ label:'Latam', region:'LATAM' },
   'AUS':{ label:'Australia & NZ', region:'AUSNZ' }, 'NZL':{ label:'Australia & NZ', region:'AUSNZ' },
+  'JPN':{ label:'Japan & Korea', region:'JPNKOR' }, 'KOR':{ label:'Japan & Korea', region:'JPNKOR' },
   'DEU':{ label:'DACH', region:'DACH' }, 'AUT':{ label:'DACH', region:'DACH' }, 'CHE':{ label:'DACH', region:'DACH' },
   'THA':{ label:'South East Asia', region:'SEA' },
   'VNM':{ label:'South East Asia', region:'SEA' },
@@ -419,6 +420,22 @@ const TRADE = {
   'Customer Care':{'all':true,'subs':{'Services':false,'Maintenance':true,'Components':false,'Training':false}}
 };
 
+const JPN_KOR = {
+  'Wood':          { all:true,  subs:{'Cutting':false,'Edging':true,'Drilling':false,'Finishing':true,'Multi-machining':true} },
+  'Glass':         { all:true,  subs:{'Cutting':false,'Edging':false,'Drilling':false,'Multi-machining':true} },
+  'Stone':         { all:false, subs:{'Cutting':false,'Edging':false,'Finishing':false,'Multi-machining':false} },
+  'Materia':       { all:false, subs:{'Cutting':false,'Finishing':false,'Multi-machining':false} },
+  'Metal':         { all:false, subs:{'Cutting':false} },
+  'Customer Care': { all:false, subs:{'Services':false,'Maintenance':false,'Components':false,'Training':false} }
+};
+const DACH_SEO = {
+  'Wood':          { all:true,  subs:{'Cutting':false,'Edging':true,'Drilling':true,'Finishing':false,'Multi-machining':true} },
+  'Glass':         { all:true,  subs:{'Cutting':false,'Edging':true,'Drilling':false,'Multi-machining':false} },
+  'Stone':         { all:false, subs:{'Cutting':false,'Edging':false,'Finishing':false,'Multi-machining':false} },
+  'Materia':       { all:true,  subs:{'Cutting':false,'Finishing':false,'Multi-machining':true} },
+  'Metal':         { all:false, subs:{'Cutting':false} },
+  'Customer Care': { all:false, subs:{'Services':false,'Maintenance':false,'Components':false,'Training':false} }
+};
 const SEA = {
   'Wood':          { all:true,  subs:{'Cutting':false,'Edging':false,'Drilling':false,'Finishing':false,'Multi-machining':true} },
   'Glass':         { all:true,  subs:{'Cutting':false,'Edging':false,'Drilling':false,'Multi-machining':true} },
@@ -513,6 +530,11 @@ const COUNTRIES = {
   'NIC':{ iso:'NIC', name:'Nicaragua',    active: LATAM },
   'CRI':{ iso:'CRI', name:'Costa Rica',   active: LATAM },
   'PAN':{ iso:'PAN', name:'Panama',       active: LATAM },
+  'JPN':{ iso:'JPN', name:'Japan', active: JPN_KOR },
+  'KOR':{ iso:'KOR', name:'South Korea', active: JPN_KOR },
+  'DEU':{ iso:'DEU', name:'Germany',     active: DACH_SEO },
+  'AUT':{ iso:'AUT', name:'Austria',     active: DACH_SEO },
+  'CHE':{ iso:'CHE', name:'Switzerland', active: DACH_SEO },
   'THA':{ iso:'THA', name:'Thailand', active: SEA },
   'VNM':{ iso:'VNM', name:'Vietnam', active: SEA },
   'MYS':{ iso:'MYS', name:'Malaysia', active: SEA },
